@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>网易云音乐 Electron</title>
+
+    <script src="../js/dialog.js"></script>
+    <script src="../js/request.js"></script>
+    <script src="../js/netease.js"></script>
+    <script src="../js/nel.js"></script>
+
+    
+    <link rel="stylesheet" href="../css/nel.css">
+    <link rel="stylesheet" href="../css/dialog.css">
+</head>
+
+<body id="main">
+    <div id="titlebar" class="menu inline darker" >
+        <img id="login" src="../pics/BILIBILI.png" alt="banner" class="banner">
+        <span id="loginLabel" class="menu-item">
+            未登录
+        </span>
+        <span id="drag" class="menu-drag-item">
+        </span>
+        <span id="musicTitle" class=" music-title">
+            
+        </span>
+    </div>
+    <div class="sidebar">
+        <ul class="list-box">
+            <li id="favBtn" class="list-item light-dark">我喜欢的音乐</li>
+            <li id="fmBtn" class="list-item light-dark">私人FM</li>
+            <li id="dailyRecommendBtn" class="list-item light-dark">每日推荐</li>
+            <li id="sheetBtn" class="list-item light-dark">我的歌单</li>
+        </ul>
+
+        <p class="tag">歌单详情</p>
+        <div id="sheetDetialBox" class="sheet-detial-box">
+            <img id="sheetDetialBoxImg" src="" alt="" class="sheet-detial-box-img"/>
+            <div class="sheet-detail-content">
+
+            </div>
+            
+        </div>
+    </div>
+    <div id="mainPage" class="page">
+
+    </div>
+    <div class="playbar darker inline">
+        <img id="cover" src="../pics/BILIBILI.png" alt="album cover" class="album" />
+        <img id="playerLast" class="button menu-item" src="../pics/last.png" />
+        <img id="playerPlay" class="button menu-item" src="../pics/play.png" />
+        <img id="playerNext" class="button menu-item" src="../pics/next.png" />
+        <span class="progress-container inline">
+            <span id="currentTimeLabel" class="progress-time menu-item timelabel">0:0</span>
+            <span id="progress" class="progress menu-item ">
+                <span id="progressPin" class="progress-pin"></span>
+            </span>
+            <span id="lengthLabel" class="progress-time menu-item timelabel">0:0</span>
+        </span>
+        <img id="playlistBtn" class="button menu-item right" src="../pics/list.png" />
+        <img id="playmodeBtn" class="button menu-item right" src="../pics/loop.png" />
+    </div>
+    <div id="playlistBox" class="playlist-box">
+        <p id="playlistSheetName" class="tag"></p>
+        <ul id="playList"></ul>
+    </div>
+    
+    <audio id="player" src="" controls hidden></audio>
+</body>
+
+</html>

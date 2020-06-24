@@ -1,0 +1,17 @@
+{
+  "name": "netease-electron",
+  "version": "1.0.0",
+  "description": "A gui implement of NeteaseApi.",
+  "main": "main.js",
+  "scripts": {
+    "test": "electron ."
+  },
+  "keywords": [
+    "netease"
+  ],
+  "author": "CxZMoE",
+  "license": "GPL3.0",
+  "dependencies": {
+    "electron": "^9.0.4"
+  }
+}

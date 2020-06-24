@@ -1,0 +1,5 @@
+<form action="" method="get">
+    <input id="username" name="user" type="text" placeholder="请输入用户名">
+    <input id="password" name="passwd" type="password" placeholder="请输入密码">
+    <input id="loginBtn" type="submit" value="登录">
+</form>

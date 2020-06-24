@@ -1,0 +1,22 @@
+[Desktop Entry]
+Categories=Application;Multimedia;Music;
+Comment[zh_CN]=网易云音乐Electron
+Comment=网易云音乐Electron
+Encoding=UTF-8
+Exec=/usr/bin/netease-electron
+GenericName[zh_CN]=
+GenericName=
+Hidden=false
+Icon=/usr/share/netease-electron/resources/app/static/pics/BILIBILI.png
+MimeType=
+Name=网易云音乐Electron
+Name[en]=Netease-Electron
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=

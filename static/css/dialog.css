@@ -1,0 +1,111 @@
+/* Dialog */
+    
+button{
+    outline: none;
+}
+.dialog-box {
+    position: absolute;
+    border-radius: 5px;
+
+    height: 300px;
+    width: 350px;
+    left: calc(50% - (350px / 2));
+    top: calc(50% - (300px / 2));
+    user-select: none;
+
+    box-shadow: 1px 1px 2px 1px #555;
+    background-color: #2d2d2d;
+}
+
+.dialog-button {
+    color: ivory;
+    border-radius: 100%;
+    box-shadow: 0 0 2px 1px #555;
+    height: 24px;
+    width: 24px;
+    text-align: center;
+    line-height: 24px;
+    margin-right: 6px;
+    transition:  0.3s;
+    background-color: #303030;
+    
+}
+
+.dialog-button:hover {
+    background-color: #2d2d2d;
+    box-shadow: 0 0 2px 1px rgb(143, 141, 141);
+}
+
+.dialog-box-title-bar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: inherit;
+    border-radius: 5px;
+    box-shadow: 0px 1px 2px 1px #555;
+    font-weight: bold;
+    text-align: center;
+    height: 30px;
+    line-height: 30px;
+    background-color: #1e1e1e;
+    margin: 0;
+    padding: 0;
+}
+
+.dialog-box-title-bar>p {
+    margin: 0;
+    margin-right: auto;
+    margin-left: 20px;
+    color: ivory;
+}
+
+.dialog-box-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    padding-top: 45px;
+    text-align: center;
+    -webkit-user-drag: none;
+}
+.dialog-box-body>input{
+    outline: 0px;
+    color: ivory;
+    margin: 5px 0px;
+    padding-top: 5px 10px;
+    line-height: 24px;
+    border-radius: 5px;
+    background-color: #303030;
+    border: 1px solid coral;
+    transition: 0.2s;
+}
+
+.dialog-box-body>input:hover{
+    border: 1px solid rgb(255, 156, 120);
+}
+.dialog-box-confirm{
+    color: ivory;
+    margin-top: 30px;
+    border-radius: 5px;
+    box-shadow: 0 0 2px 1px #555;
+
+    text-align: center;
+    line-height: 24px;
+
+    transition:  0.3s;
+    background-color: #303030;
+    justify-content: center;
+    align-items: center;
+    padding: 5px 15px;
+}
+
+.dialog-box-confirm:hover{
+    background-color: #7c7c7c;
+    cursor: pointer;
+}
+
+.dialog-box-confirm:focus-within{
+    background-color: #d8d8d8;
+}
+
