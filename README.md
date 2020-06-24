@@ -5,8 +5,11 @@
 
 ``` shell
 # 软件将会被安装在/usr/share/netease-electron,并创建一个桌面快捷方式
-git clone https://github.com/CxZMoE/netease-electron.git
-cd netease-electron
+# 下载release
+wget https://github.com/CxZMoE/netease-electron/releases/download/v1.0-alpha/netease-electron-linux-x64.tar.gz
+# 解压
+tar -jxvf netease-electron-linux-x64.tar.gz
+# 安装
 sudo sh install.sh
 ```
 
