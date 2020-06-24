@@ -8,7 +8,7 @@
 # 下载release
 wget https://github.com/CxZMoE/netease-electron/releases/download/v1.0-alpha/netease-electron-linux-x64.tar.gz
 # 解压
-tar -jxvf netease-electron-linux-x64.tar.gz
+tar -zxvf netease-electron-linux-x64.tar.gz
 # 安装
 sudo sh install.sh
 ```
