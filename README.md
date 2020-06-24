@@ -36,6 +36,7 @@ sudo sh install.sh
 + 歌曲评论显示和发送
 + 进度条
 + 全局快捷键
+    + Ctrl+Alt+P 播放/暂停
     + Ctrl+Alt+右箭头 下一首
     + Ctrl+Alt+左键头 上一首
     + Ctrl+Alt+上箭头 音量+
