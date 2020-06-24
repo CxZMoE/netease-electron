@@ -15,6 +15,11 @@ sudo sh install.sh
 
 # 截图
 
+首页
+![首页](https://github.com/CxZMoE/netease-electron/raw/master/preview/netease-electron-home.png)
+
+歌曲页面
+![歌曲页面](https://github.com/CxZMoE/netease-electron/raw/master/preview/netease-electron-music.png)
 
 # 功能
 
