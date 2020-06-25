@@ -57,6 +57,16 @@ sudo sh install.sh
 基本功能实现
 + 邮箱登录、每日推荐、私人FM、我的歌单、我喜欢的音乐、双端签到（登录后点击头像）、歌词显示、歌词双击定位、歌曲搜索（Ctrl+S 打开）、喜欢/不喜欢音乐、歌曲评论显示和发送、进度条、全局快捷键、最小化到托盘
 
+# QA
+### 遇到`The SUID sandbox helper binary was found, but is not configured correctly. ` 怎么办？
+这个是deepin内核的问题，解决方法有两种：
+1. 在程序根目录下
+``` shell
+sudo chown root chrome-sandbox
+chmod 4755 chrome-sandbox
+```
+2. 修改内核参数 sudo sysctl kernel.unprivileged_userns_clone=1
+
 # 贡献
 欢迎提交Issue。
 欢迎Fork提交代码，教程百度上有。
