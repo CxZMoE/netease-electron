@@ -3,6 +3,7 @@
 
 # 安装
 
+`请用邮箱账号登录，其它登陆方式以后会添加。`
 ``` shell
 # 软件将会被安装在/usr/share/netease-electron,并创建一个桌面快捷方式
 # 下载release
