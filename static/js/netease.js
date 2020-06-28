@@ -6,6 +6,7 @@ const path = require("path")
 const { fileURLToPath } = require("url")
 //const server = "http://127.0.0.1:50505"
 const server = "http://39.108.90.170:50505"
+const analyze = "http://39.108.90.170:3333"
 
 var loginData = {}
 // 登录状态

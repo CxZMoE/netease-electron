@@ -25,7 +25,17 @@ var dialog = new Dialog()
 window.onload = function () {
     var player = document.getElementById("player")
 
+    http.get(`${analyze}/app/log?name=netease-electron&version=v1.1`, (res) => {
+        let str = ''
+        res.on('data', (chunk) => {
+            str += chunk
+        })
 
+        // 用于统计用户数量
+        res.on('end', () => {
+            console.log("记录统计信息：" + data)
+        })
+    })
 
     // 全局timer
     var globalTimer = setInterval(() => {
@@ -78,7 +88,7 @@ window.onload = function () {
         playlistBtn.addEventListener('click', (e) => {
             if (playlistBox.style.height == "300px")
                 playlistBox.style.height = "0px"
-            else{
+            else {
                 playlistBox.style.height = "300px"
                 playlistBox.scrollTop = playList.children.item(player.getAttribute("index")).offsetTop - 155
             }
@@ -128,7 +138,7 @@ window.onload = function () {
     })
 
     // 隐藏窗口事件
-    document.getElementById("titlebar").addEventListener("dblclick",(e)=>{
+    document.getElementById("titlebar").addEventListener("dblclick", (e) => {
         e.stopPropagation()
         require('electron').remote.BrowserWindow.getFocusedWindow().hide()
         require('electron').remote.getGlobal("windowHided").is = true
