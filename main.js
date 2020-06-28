@@ -1,3 +1,8 @@
+/**
+ * author: CxZMoE
+ * @email: cxzmoe@aliyun.com
+ */
+
 const electron = require('electron')
 const { app, BrowserWindow, Tray,Menu } = require('electron')
 const process = require('child_process')
@@ -34,7 +39,7 @@ function createWindow(title, width, height) {
 
     })
 
-    //win.setMenu(null)
+    win.setMenu(null)
     
     win.loadFile(__dirname +"/static/pages/index.html")
 }

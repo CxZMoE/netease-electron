@@ -89,17 +89,18 @@ Dialog.prototype.getContentElement = function(id){
 }
 
 Dialog.prototype.newLoginDialog = function(id){
-    readFile(`./static/pages/login.html`, (err, data) => {
+    readFile(path.join(__dirname, "../pages/login.html"), (err, data) => {
         // body
         let m = document.getElementsByTagName("body")[0]
         let newNode = document.createElement("DIV")
         //<div id="loginDialog" class="dialog-box">
-        newNode.setAttribute("id","loginDialog")
+        newNode.setAttribute("id",id)
         newNode.classList.add(["dialog-box"])
+        newNode.setAttribute("id",id)
         newNode.innerHTML = data
         m.appendChild(newNode)
         let d = document.getElementById("loginDialogTitle")
-        newNode.setAttribute("id",id)
+        
         // 处理拖动
         newNode.addEventListener('mousedown', (e) => {
             newNode.setAttribute("l_x", e.x)
