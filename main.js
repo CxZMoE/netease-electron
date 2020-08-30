@@ -10,9 +10,9 @@ const process = require('child_process')
 // 启动api
 /*
 var neteaseApi = process.exec("PORT=50505 node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
-    console.log(stdout)
+    //console.log(stdout)
     if (err){
-        console.log(err)
+        //console.log(err)
         return
     }
 })
@@ -35,12 +35,12 @@ function createWindow(title, width, height) {
             enableRemoteModule: true
             
         },
-        icon: __dirname + "/static/pics/BILIBILI.png"
+        icon: __dirname + "/static/pics/BILIBILI.ico"
 
     })
 
     win.setMenu(null)
-    
+    //win.webContents.openDevTools()
     win.loadFile(__dirname +"/static/pages/index.html")
 }
 let tray = null

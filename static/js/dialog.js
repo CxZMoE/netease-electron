@@ -1,3 +1,6 @@
+const { shell } = require("electron")
+
+
 function Dialog() {
     this.list = new Array()
 
@@ -142,6 +145,114 @@ Dialog.prototype.newLoginDialog = function(id){
         loginDialogCloseBtn.addEventListener("click",(e)=>{
             e.stopPropagation()
             newNode.remove()
+        })
+    })
+    return id
+}
+
+Dialog.prototype.newCollectDialog = function(id,sheetlist,now,cookie){
+    readFile(path.join(__dirname, "../pages/collect.html"), (err, data) => {
+        // body
+        let m = document.getElementsByTagName("body")[0]
+        let newNode = document.createElement("DIV")
+        //<div id="loginDialog" class="dialog-box">
+        newNode.setAttribute("id",id)
+        newNode.classList.add(["dialog-box"])
+        newNode.setAttribute("id",id)
+        newNode.innerHTML = data
+        m.appendChild(newNode)
+        let d = document.getElementById("collectDialogTitle")
+        
+        // 处理拖动
+        newNode.addEventListener('mousedown', (e) => {
+            newNode.setAttribute("l_x", e.x)
+            newNode.setAttribute("l_y", e.y)
+            newNode.setAttribute("m_move", true)
+        })
+        newNode.addEventListener('mouseup', (e) => {
+            newNode.setAttribute("m_move", false)
+        })
+        newNode.addEventListener('mouseout', (e) => {
+            newNode.setAttribute("m_move", false)
+        })
+
+        newNode.addEventListener('mousemove', (e) => {
+            if (newNode.getAttribute("m_move") == "true") {
+                let rect = newNode.getBoundingClientRect()
+
+                // 上一次坐标
+                let l_x = newNode.getAttribute("l_x")
+                let l_y = newNode.getAttribute("l_y")
+
+                // 移动
+                newNode.style.left = rect.x + (e.x - l_x) + 'px'
+                newNode.style.top = rect.y + (e.y - l_y) + 'px'
+
+                // 设置上一次坐标
+                newNode.setAttribute("l_x", e.x)
+                newNode.setAttribute("l_y", e.y)
+            }
+
+        })
+
+        // 处理关闭
+        let collectDialogCloseBtn = document.getElementById("collectDialogCloseBtn")
+        collectDialogCloseBtn.addEventListener("click",(e)=>{
+            //e.stopPropagation()
+            newNode.remove()
+        })
+
+        // 加载歌单
+        let sheet_select = document.getElementById("collect-sheet")
+        for (let i=0;i<sheetlist.length;i++){
+            let opt = document.createElement("option")
+            opt.value = sheetlist[i].id
+            //console.log(sheetlist[i].name)
+            opt.innerText = sheetlist[i].name
+            sheet_select.appendChild(opt)
+        }
+
+        let collectAddBtn = document.getElementById("collectAddBtn")
+        collectAddBtn.addEventListener("click",(e)=>{
+            e.stopPropagation()
+            let req = new XMLHttpRequest()
+    
+            req.open("GET",`${server}/playlist/tracks?op=add&pid=${sheet_select.options[sheet_select.selectedIndex].value}&tracks=${now}&cookie=${cookie}&timestamp=${new Date().getTime()}`)
+            req.send()
+            req.onreadystatechange = function(e){
+                if (req.status == 200 && req.readyState == 4){
+                    let data = req.responseText
+                    //console.log(data)
+                    let status = JSON.parse(data).code
+                    if (status == 200){
+                        new Notification("通知", {
+                            body: "收藏歌曲成功"
+                        })
+                        newNode.remove()
+                    }else if (status == 502){
+                        let req2 = new XMLHttpRequest()
+                            req2.open("GET",`${server}/playlist/tracks?op=del&pid=${sheet_select.options[sheet_select.selectedIndex].value}&tracks=${now}&cookie=${cookie}&timestamp=${new Date().getTime()}`)
+                            req2.send()
+                            req2.onreadystatechange = function(e){
+                                if (req.status == 200 && req.readyState == 4){
+                                    new Notification("通知", {
+                                        body: "取消收藏歌曲成功"
+                                    })
+                                    newNode.remove()
+                                }
+                            }
+                        
+                    }else{
+                        new Notification("通知", {
+                            body: "收藏歌曲失败"
+                        })
+                        newNode.remove()
+                    }
+                        
+                    
+                   
+                }
+            }
         })
     })
     return id

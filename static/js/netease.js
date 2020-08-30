@@ -4,9 +4,12 @@ const { url } = require("inspector")
 const { time, clear } = require("console")
 const path = require("path")
 const { fileURLToPath } = require("url")
+const { stringify } = require("querystring")
 //const server = "http://127.0.0.1:50505"
 const server = "http://39.108.90.170:50505"
 const analyze = "http://39.108.90.170:3333"
+
+var dialog = new Dialog()
 
 var loginData = {}
 // 登录状态
@@ -31,6 +34,7 @@ var fmSheet = []
 
 // 播放列表
 var mainplaylist = []
+var mainplaylist_id = ""
 
 // 歌词计时器
 var lyricInterval = {}
@@ -138,7 +142,7 @@ function logout(username, password) {
             // 保存登录信息
             if (res.statusCode == 200) {
                 fs.unlink(`${CONFIG_DIR}/login.json`, (err) => {
-                    console.log(err)
+                    //console.log(err)
                     new Notification("通知", {
                         body: "登出失败"
                     })
@@ -164,7 +168,7 @@ function getFav() {
         })
         res.on('end', () => {
             if (res.statusCode == 200) {
-                console.log("获取我最喜欢的音乐")
+                //console.log("获取我最喜欢的音乐")
                 let sheetlist = JSON.parse(str).playlist
                 // 清空内容
                 sheetListBox.innerHTML = ""
@@ -185,6 +189,37 @@ function getFav() {
     })
 }
 
+// 获取心跳模式
+function getHeart(){
+    let mid = mainplaylist[player.getAttribute('index')].id
+    let sheetid = mainplaylist_id
+    let url = `${server}/playmode/intelligence/list?id=${mid}&pid=${sheetid}&cookie=${cookie}`
+    //console.log("get heart:"+url)
+    http.get(url,(res)=>{
+        let str = ''
+        res.on('data',(chunk)=>{
+            str += chunk
+        })
+        res.on('end',()=>{
+            if (res.statusCode == 200){
+                //console.log("获取心跳模式歌单")
+                //console.log(str)
+                let sheetlist = JSON.parse(str).data
+                // 清空内容
+                sheetListBox.innerHTML = ""
+
+                // 设置当前歌单为我喜欢的音乐
+                player.setAttribute("sheet", sheetid)
+
+                // 设置当前播放的歌单名称
+                player.setAttribute('sheetName', sheetlist[0].songInfo.name)
+                // 获取歌单歌曲列表
+                getSheet("heart",sheetlist)
+            }
+        })
+    })
+}
+
 
 // 绑定实时当前歌单显示框
 function attachPlaylist() {
@@ -197,7 +232,7 @@ function attachPlaylist() {
         playlistSheetName.innerText = player.getAttribute("sheetName")
 
         playList.innerHTML = ""
-        console.log("attach:" + sheetListBox)
+        //console.log("attach:" + sheetListBox)
         for (let i = 0; i < sheetListBox.children.length; i++) {
 
             let c = sheetListBox.children.item(i).cloneNode(true)
@@ -230,72 +265,183 @@ function attachPlaylist() {
 
 // 绑定列表中歌曲名称
 function bindListItemName(list, ids) {
-
-    http.get(`${server}/song/detail?ids=${ids}`, (res) => {
-        let str = ''
-        res.on('data', (chunk) => {
-            str += chunk
-        })
-        res.on('end', () => {
-            let songs = JSON.parse(str).songs
-
-
-            if (songs == undefined) {
-                bindListItemName(list, ids)
-                return
+    let ids_s = ids.split(",")
+    let ids_size = ids_s.length
+    let count = 0
+    let t_count = 0
+    let limit = 500
+    if (ids_size > limit){
+        //console.log("large sheet,split request.")
+        let steps = parseInt(ids_size/limit)
+        //console.log("size:"+ids_size+"limit:"+limit+"steps:"+steps)
+        //console.log("steps:"+steps)
+        for (let i=0;i<=steps;i++){
+            let step = i
+            let step_count = limit
+            //console.log('step_count:'+step_count)
+            if (i==steps){
+                step_count = ids_size - (limit*steps)
             }
-            for (let i = 0; i < songs.length; i++) {
-
-                // 为列表项目绑定歌曲名
-                list.children.item(i).setAttribute("name", songs[i].name)
-
-                // 为列表项目绑定封面
-                list.children.item(i).setAttribute("cover", songs[i].al.picUrl)
-
-                // 为列表项目绑定专辑ID
-                list.children.item(i).setAttribute("albumId", songs[i].al.id)
-
-                // 为列表项目绑定专辑名称
-                list.children.item(i).setAttribute("albumName", songs[i].al.name)
-
-                // 为列表项目生成作者字符串
-                let authors = songs[i].ar
-                let author = ''
-                for (let i = 0; i < authors.length; i++) {
-                    if (i == authors.length - 1) {
-                        author += authors[i].name
-                        continue
-                    }
-                    author += authors[i].name + "/"
+            t_count += step_count
+            //console.log("t_count:"+t_count)
+            let new_ids = ""
+            //console.log("step_count"+step_count)
+            for (let j=0;j<step_count;j++){
+                ////console.log(ids_s[j])
+                
+                if (j == step_count-1){
+                    new_ids = new_ids + ids_s[j] + ""
+                }else{
+                    new_ids = new_ids + ids_s[j] + ","
                 }
-
-                list.children.item(i).setAttribute('author', author)
-
-                // 列表项目左侧的歌曲封面
-                let coverLeft = document.createElement("IMG")
-                coverLeft.style.float = "left"
-                coverLeft.style.width = "35px"
-                coverLeft.style.height = "35px"
-                coverLeft.setAttribute("src", songs[i].al.picUrl)
-
-
-                // 列表项目的歌曲名称
-                let p = document.createElement("P")
-                p.innerText = songs[i].name + " - " + author
-                list.children[i].appendChild(coverLeft)
-                list.children[i].appendChild(p)
-
-
-
-
             }
-
-            // 初始化主播放列表（第一次肯定为空）
-            if (firstLoad) {
-                initMainPlaylist(list)
-            }
+            
+            http.get(`${server}/song/detail?ids=${new_ids}`, (res) => {
+                let str = ''
+                
+                res.on('data', (chunk) => {
+                    str += chunk
+                })
+                
+                res.on('end', () => {
+                    //console.log(`${server}/song/detail?ids=${new_ids}`)
+                    ////console.log(str)
+                    let songs = JSON.parse(str).songs
+        
+        
+                    if (songs == undefined) {
+                        bindListItemName(list, ids)
+                        return
+                    }
+                    for (let i = 0; i < songs.length; i++) {
+                        let item_index = step*limit+i
+                        // 为列表项目绑定歌曲名
+                        list.children.item(item_index).setAttribute("name", songs[i].name)
+                        //console.log('['+count+']get one: '+songs[i].name)
+                        
+                        // 为列表项目绑定封面
+                        list.children.item(item_index).setAttribute("cover", songs[i].al.picUrl)
+        
+                        // 为列表项目绑定专辑ID
+                        list.children.item(item_index).setAttribute("albumId", songs[i].al.id)
+        
+                        // 为列表项目绑定专辑名称
+                        list.children.item(item_index).setAttribute("albumName", songs[i].al.name)
+        
+                        // 为列表项目生成作者字符串
+                        let authors = songs[i].ar
+                        let author = ''
+                        for (let i = 0; i < authors.length; i++) {
+                            if (i == authors.length - 1) {
+                                author += authors[i].name
+                                continue
+                            }
+                            author += authors[i].name + "/"
+                        }
+        
+                        list.children.item(item_index).setAttribute('author', author)
+        
+                        // 列表项目左侧的歌曲封面
+                        let coverLeft = document.createElement("IMG")
+                        coverLeft.style.float = "left"
+                        coverLeft.style.width = "35px"
+                        coverLeft.style.height = "35px"
+                        coverLeft.setAttribute("src", songs[i].al.picUrl)
+        
+        
+                        // 列表项目的歌曲名称
+                        let p = document.createElement("P")
+                        p.innerText = songs[i].name + " - " + author
+                        list.children[item_index].appendChild(coverLeft)
+                        list.children[item_index].appendChild(p)
+        
+                        count ++
+        
+                        if (count == ids_size - 1){
+                            // 初始化主播放列表（第一次肯定为空）
+                            if (firstLoad) {
+                                initMainPlaylist(list)
+                            }
+                        }
+                        
+                    }
+                })
+                
+            })
+            
+        }
+        
+    }else{
+        http.get(`${server}/song/detail?ids=${ids}`, (res) => {
+            let str = ''
+            res.on('data', (chunk) => {
+                str += chunk
+            })
+            
+            res.on('end', () => {
+                //console.log(`${server}/song/detail?ids=${ids}`)
+                //console.log(str)
+                let songs = JSON.parse(str).songs
+    
+    
+                if (songs == undefined) {
+                    bindListItemName(list, ids)
+                    return
+                }
+                for (let i = 0; i < songs.length; i++) {
+    
+                    // 为列表项目绑定歌曲名
+                    list.children.item(i).setAttribute("name", songs[i].name)
+    
+                    // 为列表项目绑定封面
+                    list.children.item(i).setAttribute("cover", songs[i].al.picUrl)
+    
+                    // 为列表项目绑定专辑ID
+                    list.children.item(i).setAttribute("albumId", songs[i].al.id)
+    
+                    // 为列表项目绑定专辑名称
+                    list.children.item(i).setAttribute("albumName", songs[i].al.name)
+    
+                    // 为列表项目生成作者字符串
+                    let authors = songs[i].ar
+                    let author = ''
+                    for (let i = 0; i < authors.length; i++) {
+                        if (i == authors.length - 1) {
+                            author += authors[i].name
+                            continue
+                        }
+                        author += authors[i].name + "/"
+                    }
+    
+                    list.children.item(i).setAttribute('author', author)
+    
+                    // 列表项目左侧的歌曲封面
+                    let coverLeft = document.createElement("IMG")
+                    coverLeft.style.float = "left"
+                    coverLeft.style.width = "35px"
+                    coverLeft.style.height = "35px"
+                    coverLeft.setAttribute("src", songs[i].al.picUrl)
+    
+    
+                    // 列表项目的歌曲名称
+                    let p = document.createElement("P")
+                    p.innerText = songs[i].name + " - " + author
+                    list.children[i].appendChild(coverLeft)
+                    list.children[i].appendChild(p)
+    
+    
+    
+    
+                }
+    
+                // 初始化主播放列表（第一次肯定为空）
+                if (firstLoad) {
+                    initMainPlaylist(list)
+                }
+            })
         })
-    })
+    }
+    
 }
 
 // 生成IDS请求参数
@@ -305,7 +451,7 @@ function generateIdsList() {
         consolg.log("sheetlistbox is undefined")
     }
     let ids = ''
-    //console.log(sheetListBox)
+    ////console.log(sheetListBox)
     for (let i = 0; i < sheetListBox.children.length; i++) {
         if (i == sheetListBox.children.length - 1) {
             ids += sheetListBox.children[i].getAttribute('musicID')
@@ -348,7 +494,7 @@ function sourceMusicUrl(li) {
                 return
             }
 
-            console.log("开始播放：" + musicUrl)
+            //console.log("开始播放：" + musicUrl)
             player.play()
 
             // 设置当前状态为《播放》
@@ -386,7 +532,7 @@ function sourceMusicUrl(li) {
 
 // 更新封面方法
 function updateCover(coverUrl) {
-    console.log("更新封面：" + coverUrl)
+    //console.log("更新封面：" + coverUrl)
     // 获取左下角专辑图片框
     let cover = document.getElementById("cover")
 
@@ -406,9 +552,101 @@ function updateCover(coverUrl) {
 
 
 // 输入歌单ID，获取歌单内容
-function getSheet(id) {
+function getSheet(id,playlist) {
 
-    // 请求
+
+    if (id == "heart"){
+        //mainplaylist_id = "heart"
+            
+
+    
+                // 设置player的播放列表长度参数
+                player.setAttribute("count", playlist.length)
+    
+    
+                // 设置当前播放的歌单名称
+                player.setAttribute('sheetName', "heart")
+                // 绑定当前歌单创造者
+                player.setAttribute("sheetCreator", "ai")
+                // 绑定当前歌单播放数
+                player.setAttribute("sheetPlayCount", 0)
+                // 绑定当前歌单歌曲数
+                player.setAttribute("sheetTrackCount", playlist.length)
+                // 绑定当前歌单简介
+                //player.setAttribute("sheetDescription", ((playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description))
+                // 绑定当前歌单封面
+                //player.setAttribute("sheetCover", playlist.coverImgUrl)
+    
+                // 加载歌单详情框
+                //loadSheetDetialBox(0)
+    
+                // 遍历所有的歌单ID以执行一些操作
+                for (let i = 0; i < playlist.length; i++) {
+    
+                    // 创建一条列表项，每个列表项目对应一首歌
+                    let li = document.createElement('LI')
+    
+                    // 添加样式 背景色#303030
+                    li.classList.add(["sheet-list-item"])
+                    li.classList.add(["light-dark"])
+    
+                    // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
+                    li.setAttribute('index', i)
+                    li.setAttribute('musicID', playlist[i].id)
+    
+                    // 为列表项添加点击事件
+                    li.addEventListener('click', () => {
+    
+                        // 设置上次播放的歌曲ID
+                        player.setAttribute("last", player.getAttribute('now'))
+                        player.setAttribute("lastIndex", player.getAttribute("index"))
+    
+                        // 设置当前播放的index
+                        player.setAttribute('index', li.getAttribute('index'))
+    
+                        // 设置当前播放的歌单名称
+                        player.setAttribute('sheetName', "心动模式歌单")
+    
+                        // 为播放器绑定播放地址，并开始播放
+                        sourceMusicUrl(li)
+                        //initMainPlaylist()
+                        attachPlaylist()
+                        // 初始化主播放列表
+                        initMainPlaylist(playList)
+                    })
+    
+    
+                    sheetListBox.appendChild(li)
+    
+                }
+    
+    
+                // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
+                // `${server}/song/detail?ids=${ids}
+    
+                // 为所有列表项生成综合请求参数ids，通过上面的
+                // 址可以反馈到所有列表项目音乐详情的一个数组
+                let ids = generateIdsList()
+    
+                // 为列表项绑定额外的数据
+                /**
+                 * // 为列表项目绑定歌曲名
+                        list.children.items(i).setAttribute("name", songs[i].name)
+    
+                        // 为列表项目绑定封面
+                        list.children.items(i).setAttribute("cover", songs[i].al.picUrl)
+    
+                        // 为列表项目绑定专辑ID
+                        list.children.items(i).setAttribute("albumId", songs[i].al.id)
+    
+                        // 为列表项目绑定专辑名称
+                        list.children.items(i).setAttribute("albumName", songs[i].al.name)
+                 */
+                bindListItemName(sheetListBox, ids)
+    
+                // 歌单界面形成☝
+    }else{
+        // 请求
     http.get(`${server}/playlist/detail?id=${id}`, (res) => {
 
         // 获取歌单列表控件
@@ -420,6 +658,7 @@ function getSheet(id) {
         })
         res.on('end', () => {
 
+            mainplaylist_id = id
             // 这里实际上获取到一个歌单的详情，不是歌单列表哦2333
             let playlist = JSON.parse(str).playlist
 
@@ -515,6 +754,8 @@ function getSheet(id) {
 
         })
     })
+    }
+    
 }
 
 function initMainPlaylist(list) {
@@ -558,7 +799,7 @@ function getSheets() {
             let data = JSON.parse(str)
             // 请求失败
             if (data.code != 200) {
-                console.log(str)
+                //console.log(str)
                 return
             }
 
@@ -890,7 +1131,8 @@ function loadFM() {
                         loadComment(1)
                         /// 加载喜不喜欢按钮
                         loadLikeBtn()
-                        loadDislikeBtn()
+                        //loadDislikeBtn()
+                        loadCollectBtn()
                         // 加载开始评论按钮
                         loadAddcommentBtn()
                     })
@@ -904,14 +1146,14 @@ function loadFM() {
 
 // 加载评论
 function loadComment(page) {
-    //console.log("show")
+    ////console.log("show")
     if (page < 1) {
         page = 1
     }
 
     let musicPanelBottom = document.getElementById("musicPanelBottom")
 
-    console.log("加载评论：" + `${server}/comment/music?id=${player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`)
+    //console.log("加载评论：" + `${server}/comment/music?id=${player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`)
     http.get(`${server}/comment/music?id=${player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
         let str = ''
         res.on('data', (chunk) => {
@@ -920,7 +1162,7 @@ function loadComment(page) {
         res.on('end', () => {
             let hot = JSON.parse(str).hotComments
             let normal = JSON.parse(str).comments
-            //console.log(str)
+            ////console.log(str)
             musicPanelBottom.innerHTML = ""
 
             let hotcommentList = document.createElement("UL")
@@ -933,7 +1175,7 @@ function loadComment(page) {
             normalcommentList.setAttribute("page", 1)
             normalcommentList.setAttribute("pages", Math.round(JSON.parse(str).total / 3))
 
-            //console.log(Math.round(JSON.parse(str).total / 3))
+            ////console.log(Math.round(JSON.parse(str).total / 3))
             for (let i = 0; i < hot.length; i++) {
                 let user = hot[i].user.nickname
                 let content = hot[i].content
@@ -1009,7 +1251,7 @@ function loadComment(page) {
                         })
                         res.on('end', () => {
                             let normal = JSON.parse(str).comments
-                            //console.log(str)
+                            ////console.log(str)
                             if (normal != undefined) {
                                 normalcommentList.innerHTML = ""
                                 for (let i = 0; i < normal.length; i++) {
@@ -1044,17 +1286,17 @@ function loadComment(page) {
                 e.stopPropagation()
                 let page = Number(normalcommentList.getAttribute("page"))
 
-                //console.log("still")
-                //console.log("still+"+page)
-                //console.log("stillpages:"+normalcommentList.getAttribute("pages"))
-                //console.log("??"+(page < normalcommentList.getAttribute("pages")))
+                ////console.log("still")
+                ////console.log("still+"+page)
+                ////console.log("stillpages:"+normalcommentList.getAttribute("pages"))
+                ////console.log("??"+(page < normalcommentList.getAttribute("pages")))
                 if (page < Number(normalcommentList.getAttribute("pages"))) {
 
                     page = Number(page) + 1
                     normalcommentList.setAttribute("page", page)
-                    //console.log(normalcommentList.getAttribute("pages"))
-                    //console.log(normalcommentList.getAttribute("page"))
-                    //console.log(page)
+                    ////console.log(normalcommentList.getAttribute("pages"))
+                    ////console.log(normalcommentList.getAttribute("page"))
+                    ////console.log(page)
                     http.get(`${server}/comment/music?id=${player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
                         let str = ''
                         res.on('data', (chunk) => {
@@ -1063,7 +1305,7 @@ function loadComment(page) {
                         res.on('end', () => {
 
                             let normal = JSON.parse(str).comments
-                            //console.log(str)
+                            ////console.log(str)
                             if (normal != undefined) {
                                 normalcommentList.innerHTML = ""
                                 for (let i = 0; i < normal.length; i++) {
@@ -1119,18 +1361,42 @@ function loadLikeBtn() {
                 str += chunk
             })
             res.on('end', () => {
+                //console.log(str)
                 if (JSON.parse(str).code == 200) {
                     new Notification("通知", {
                         body: "喜欢歌曲成功"
                     })
-                } else {
+                }else {
                     new Notification("通知", {
                         body: "喜欢歌曲失败"
                     })
-                    console.log(str)
+                    //console.log(str)
                 }
             })
         })
+    })
+}
+
+
+// 加载收藏按钮
+function loadCollectBtn(){
+    // 收藏按钮
+    let collectBtn = document.getElementById("collectBtn")
+    collectBtn.addEventListener("click",(e)=>{
+        let mid = player.getAttribute("now")
+        http.get(`${server}/user/playlist?uid=${loginData.account.id}`,(res)=>{
+        let str = ''
+        res.on('data',(chunk)=>{
+            str += chunk
+        })
+        res.on('end',()=>{
+            let sheetlist = JSON.parse(str).playlist
+            //console.log("[url]"+`${server}/user/playlist?uid=${loginData.account.id}`+"sheetlist:"+str)
+            let req = new XMLHttpRequest()
+            
+            let collectDialog = dialog.newCollectDialog("collect_dialog",sheetlist,mid,cookie)
+        })
+    })
     })
 }
 
@@ -1146,7 +1412,7 @@ function loadDislikeBtn() {
             })
             res.on('end', () => {
                 if (JSON.parse(str).code == 200) {
-                    console.log(str)
+                    //console.log(str)
                     new Notification("通知", {
                         body: "取消喜欢歌曲成功，可能需要一点点时间系统才会更新。"
                     })
@@ -1198,7 +1464,7 @@ function loadAddcommentBtn() {
                         addcommentBox.remove()
                         loadComment(1)
                     } else {
-                        console.log(str)
+                        //console.log(str)
                     }
                 })
             })
@@ -1227,8 +1493,8 @@ function loadMusicPage() {
 
             // 设置当前页面为音乐详情
             document.getElementById("player").setAttribute("currentPage", "music")
-            //console.log(player.getAttribute('index'))
-            //console.log(player.getAttribute('index').cover)
+            ////console.log(player.getAttribute('index'))
+            ////console.log(player.getAttribute('index').cover)
             let diskCover = document.getElementById("diskCover")
             diskCover.setAttribute("src", mainplaylist[player.getAttribute('index')].cover)
 
@@ -1237,8 +1503,8 @@ function loadMusicPage() {
 
             // 加载喜不喜欢按钮
             loadLikeBtn()
-            loadDislikeBtn()
-
+            //loadDislikeBtn()
+            loadCollectBtn()
             // 加载开始评论按钮
             loadAddcommentBtn()
             // 评论
@@ -1269,7 +1535,7 @@ function getLryic(id, lyricBox) {
 
             if (JSON.parse(str).lrc != undefined) {
                 let lyric = JSON.parse(str).lrc.lyric
-                //console.log(lyric)
+                ////console.log(lyric)
                 let lines = lyric.split("\n")
                 for (let i = 0; i < lines.length; i++) {
                     let line = lines[i]
@@ -1290,7 +1556,7 @@ function getLryic(id, lyricBox) {
 
                 }
 
-                //console.log(JSON.stringify(currentLyric))
+                ////console.log(JSON.stringify(currentLyric))
                 // 加载歌词页面
                 readFile(path.join(__dirname, "../pages/lyric.html"), (err, data) => {
                     let lyricBox = document.getElementById("lyric")
@@ -1298,7 +1564,7 @@ function getLryic(id, lyricBox) {
                     lyricBox.innerHTML = data
                     let lyricLines = document.getElementById("lyric-lines")
                     for (let i = 0; i < currentLyric.length; i++) {
-                        //console.log("123")
+                        ////console.log("123")
                         let l = document.createElement("LI")
                         //l.classList.add(["menu-item"])
                         l.setAttribute('time', currentLyric[i].time)
@@ -1311,7 +1577,7 @@ function getLryic(id, lyricBox) {
                     }
 
                     lyricInterval = setInterval(() => {
-                        //console.log(lyricBox.scrollTop)
+                        ////console.log(lyricBox.scrollTop)
 
                         let ct = document.getElementById("player").getAttribute("time")
                         let currentLine = document.getElementById("lyric-" + ct)
@@ -1320,7 +1586,7 @@ function getLryic(id, lyricBox) {
                                 lyricLines.children.item(i).style.color = "ivory"
                             }
                             currentLine.style.color = "coral"
-                            //console.log(currentLine.offsetTop)
+                            ////console.log(currentLine.offsetTop)
                             // 保持歌词内容显示
                             lyricBox.scrollTop = currentLine.offsetTop - 132
                         }
@@ -1341,7 +1607,7 @@ function getLryic(id, lyricBox) {
             }
 
 
-            //console.log(JSON.stringify(currentLyric))
+            ////console.log(JSON.stringify(currentLyric))
             //lyric = lyric.replace(pattn, '')
         })
     })

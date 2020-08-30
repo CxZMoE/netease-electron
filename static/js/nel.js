@@ -1,18 +1,17 @@
 const { readFile } = require("fs")
-const { shell } = require("electron")
 
 // 用户目录
 
 const CONFIG_DIR = require("electron").remote.app.getPath("home") + "/.moe.cxz.netease-electron"
 if (require('fs').exists(CONFIG_DIR, (e) => {
     if (!e) {
-        console.log("用户配置文件未找到")
+        //console.log("用户配置文件未找到")
         require('fs').mkdir(CONFIG_DIR, { mode: "0755" }, () => {
-            console.log("创建用户配置文件目录")
+            //console.log("创建用户配置文件目录")
         })
     }
 }))
-    console.log("home:" + USER_HOME)
+    //console.log("home:" + USER_HOME)
 
 
 var loginInterval = {}
@@ -21,11 +20,11 @@ var loginInterval = {}
 var moveProgressPin = false
 
 
-var dialog = new Dialog()
+
 window.onload = function () {
     var player = document.getElementById("player")
-
-    http.get(`${analyze}/app/log?name=netease-electron&version=v1.1`, (res) => {
+    
+    http.get(`${server}/app/log?name=netease-electron&version=v1.1`, (res) => {
         let str = ''
         res.on('data', (chunk) => {
             str += chunk
@@ -33,7 +32,7 @@ window.onload = function () {
 
         // 用于统计用户数量
         res.on('end', () => {
-            console.log("记录统计信息：" + data)
+            //console.log("记录统计信息：" + data)
         })
     })
 
@@ -157,11 +156,11 @@ window.onload = function () {
 
         // 搜索事件
         let searchKeywords = document.getElementById("searchKeywords")
-        searchKeywords.addEventListener("keydown", (e) => {
-            if (e.keyCode != 13) {
-                //console.log(e.keyCode)
-                return
-            }
+        searchKeywords.addEventListener("input", (e) => {
+            //if (e.keyCode != 13) {
+            //    ////console.log(e.keyCode)
+            //    return
+            //}
 
             http.get(`${server}/search?keywords=${e.target.value}`, (res) => {
                 let str = ''
@@ -171,7 +170,7 @@ window.onload = function () {
                 res.on('end', () => {
                     let data = JSON.parse(str)
                     if (data == undefined) {
-                        console.log(str)
+                        //console.log(str)
                         return
                     }
 
@@ -207,7 +206,7 @@ window.onload = function () {
                                 res.on('end', () => {
                                     let data = JSON.parse(str)
                                     if (data == undefined) {
-                                        console.log(str)
+                                        //console.log(str)
                                         return
                                     }
                                     let song = data.songs[0]
@@ -309,6 +308,7 @@ window.onload = function () {
         player.setAttribute("currentPage", "home")
     })
 
+    // 登陆状态判定
     fs.readFile(`${CONFIG_DIR}/login.json`, { encoding: "utf8" }, (err, data) => {
         if (err) {
             //console.error(err)
@@ -353,6 +353,7 @@ window.onload = function () {
                     } else {
                         // 登录正常
                         // 先获取我喜欢的音乐
+                        document.getElementById("login").setAttribute("src",loginData.profile.avatarUrl)
                         if (loginData.code != 502) {
                             // 有效登录
                             loginStatus = true
@@ -389,7 +390,7 @@ function initCover() {
 
             readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                 document.getElementById("mainPage").innerHTML = data
-                console.log("load sheet:" + player.getAttribute('sheet'))
+                //console.log("load sheet:" + player.getAttribute('sheet'))
                 getSheet(player.getAttribute('sheet'))
                 document.getElementById("player").setAttribute("currentPage", "home")
                 // 加载歌词
@@ -400,7 +401,8 @@ function initCover() {
                 loadComment(1)
                 /// 加载喜不喜欢按钮
                 loadLikeBtn()
-                loadDislikeBtn()
+                loadCollectBtn()
+                //loadDislikeBtn()
                 // 加载开始评论按钮
                 loadAddcommentBtn()
             })
@@ -494,6 +496,14 @@ function initSidebar() {
         loadMusicPage()
 
     })
+
+    // 心跳点击
+    var heartBtn = document.getElementById("heart")
+    heartBtn.addEventListener("click",(e)=>{
+        e.stopPropagation()
+        // getFav()
+        getHeart()
+    })  
 
     // 每日推荐被点击
     var dailyRecommendBtn = document.getElementById("dailyRecommendBtn")
@@ -592,8 +602,8 @@ function initPlayer() {
         new Notification("无法播放", {
             body: "无法播放，可能是没有版权或者权限。"
         })
-        console.log("无法播放，可能是没有版权或者权限。")
-        console.log(player)
+        //console.log("无法播放，可能是没有版权或者权限。")
+        //console.log(player)
 
         next()
     })
@@ -636,20 +646,20 @@ function bindGlobalShortcut() {
     let nextShortcut = globalShortcut.register(nextKey, () => {
         next()
         if (!nextShortcut) {
-            console.log("注册按键失败")
+            //console.log("注册按键失败")
         }
     })
     let lastShortcut = globalShortcut.register(lastKey, () => {
         last()
         if (!lastShortcut) {
-            console.log("注册按键失败")
+            //console.log("注册按键失败")
         }
     })
 
     let playPauseShortcut = globalShortcut.register(playPauseKey, () => {
         play()
         if (!playPauseShortcut) {
-            console.log("注册按键失败")
+            //console.log("注册按键失败")
         }
     })
 
@@ -657,9 +667,9 @@ function bindGlobalShortcut() {
         if (player.volume <= 0.8) {
             player.volume += 0.2
         }
-        console.log("音量：" + player.volume)
+        //console.log("音量：" + player.volume)
         if (!volUpKeyShortcut) {
-            console.log("注册按键失败")
+            //console.log("注册按键失败")
         }
     })
 
@@ -667,9 +677,9 @@ function bindGlobalShortcut() {
         if (player.volume >= 0.2) {
             player.volume -= 0.2
         }
-        console.log("音量：" + player.volume)
+        //console.log("音量：" + player.volume)
         if (!volDownKeyShortcut) {
-            console.log("注册按键失败")
+            //console.log("注册按键失败")
         }
     })
 }
@@ -684,20 +694,20 @@ let playPauseKey = `CommandOrControl+Alt+P`
 let nextShortcut = globalShortcut.register(nextKey, () => {
     next()
     if (!nextShortcut) {
-        console.log("注册按键失败")
+        //console.log("注册按键失败")
     }
 })
 let lastShortcut = globalShortcut.register(lastKey, () => {
     next()
     if (!lastShortcut) {
-        console.log("注册按键失败")
+        //console.log("注册按键失败")
     }
 })
 
 let playPauseShortcut = globalShortcut.register(playPauseKey, () => {
     play()
     if (!playPauseShortcut) {
-        console.log("注册按键失败")
+        //console.log("注册按键失败")
     }
 })
 
@@ -778,6 +788,7 @@ function last() {
         player.setAttribute('index', Number(player.getAttribute('index')) - 1)
     }
 
+    // 获取歌曲播放地址
     http.get(`${server}/song/url?id=${mainplaylist[player.getAttribute('index')].id}&cookie=${cookie}`, (res) => {
         let str = ''
         res.on('data', (chunk) => {
@@ -805,7 +816,7 @@ function next() {
 
     let mode = player.getAttribute("mode")
 
-    if (mode == "fm" && player.getAttribute('index') == "2") {
+    if (mode == "fm" && player.getAttribute('index') == "0") {
         loadFM()
 
         return
