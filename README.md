@@ -6,12 +6,8 @@
 `请用邮箱账号登录，其它登陆方式以后会添加。`
 ``` shell
 # 软件将会被安装在/usr/share/netease-electron,并创建一个桌面快捷方式
-# 下载release
-wget https://github.com/CxZMoE/netease-electron/releases/download/v1.1/netease-electron-linux-x64.tar.gz
-# 解压
-tar -zxvf netease-electron-linux-x64.tar.gz
-# 安装
-sudo sh install.sh
+# 下载安装脚本并运行
+wget https://github.com/CxZMoE/netease-electron/releases/download/v1.2/install.sh && sudo sh install.sh
 ```
 
 # 截图
