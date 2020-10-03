@@ -35,7 +35,7 @@ function createWindow(title, width, height) {
             enableRemoteModule: true
             
         },
-        icon: __dirname + "/static/pics/BILIBILI.ico"
+        icon: __dirname + "/static/pics/BILIBILI.png"
 
     })
 
