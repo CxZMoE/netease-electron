@@ -12,6 +12,6 @@
   "author": "CxZMoE",
   "license": "GPL3.0",
   "dependencies": {
-    "electron": "^9.0.4"
+    "electron": "^9.3.1"
   }
 }
