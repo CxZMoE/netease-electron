@@ -5,8 +5,8 @@ const { time, clear } = require("console")
 const path = require("path")
 const { fileURLToPath } = require("url")
 const { stringify } = require("querystring")
-//const server = "http://127.0.0.1:50505"
-const server = "http://39.108.90.170:50505"
+const server = "http://127.0.0.1:50505"
+//const server = "http://39.108.90.170:50505"
 const analyze = "http://39.108.90.170:3333"
 
 var dialog = new Dialog()
@@ -59,7 +59,7 @@ function login(username, password) {
 
         res.on('end', () => {
             let data = JSON.parse(str)
-
+            console.log(data)
             // 保存登录信息
             if (data.code != 502) {
                 loginData = JSON.parse(str)
@@ -647,17 +647,17 @@ function getSheet(id,playlist) {
                 // 歌单界面形成☝
     }else{
         // 请求
-    http.get(`${server}/playlist/detail?id=${id}`, (res) => {
+    http.get(`${server}/playlist/detail?id=${id}&cookie=${cookie}`, (res) => {
 
         // 获取歌单列表控件
         let sheetListBox = document.getElementById("sheetListBox")
-
+        
         let str = ''
         res.on('data', (chunk) => {
             str += chunk
         })
         res.on('end', () => {
-
+            console.log(str)
             mainplaylist_id = id
             // 这里实际上获取到一个歌单的详情，不是歌单列表哦2333
             let playlist = JSON.parse(str).playlist

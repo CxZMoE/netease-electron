@@ -8,15 +8,15 @@ const { app, BrowserWindow, Tray,Menu } = require('electron')
 const process = require('child_process')
 
 // 启动api
-/*
-var neteaseApi = process.exec("PORT=50505 node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
-    //console.log(stdout)
+
+var neteaseApi = process.exec("set PORT=50505 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
+    console.log(stdout)
     if (err){
-        //console.log(err)
+        console.log(err)
         return
     }
 })
-*/
+
 
 let win = null
 function createWindow(title, width, height) {
@@ -40,7 +40,7 @@ function createWindow(title, width, height) {
     })
 
     win.setMenu(null)
-    //win.webContents.openDevTools()
+    win.webContents.openDevTools()
     win.loadFile(__dirname +"/static/pages/index.html")
 }
 let tray = null
