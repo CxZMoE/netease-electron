@@ -9,7 +9,7 @@ const process = require('child_process')
 
 // 启动api
 
-var neteaseApi = process.exec("set PORT=50505 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
+var neteaseApi = process.exec("set PORT=19696 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
     console.log(stdout)
     if (err){
         console.log(err)

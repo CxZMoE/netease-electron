@@ -5,8 +5,8 @@ const { time, clear } = require("console")
 const path = require("path")
 const { fileURLToPath } = require("url")
 const { stringify } = require("querystring")
-const server = "http://127.0.0.1:50505"
-//const server = "http://39.108.90.170:50505"
+const server = "http://127.0.0.1:19696"
+//const server = "http://39.108.90.170:19696"
 const analyze = "http://39.108.90.170:3333"
 
 var dialog = new Dialog()

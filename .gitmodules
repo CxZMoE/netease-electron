@@ -1,0 +1,4 @@
+[submodule "NeteaseCloudMusicApi"]
+	path = NeteaseCloudMusicApi
+	url = https://github.com/Binaryify/NeteaseCloudMusicApi.git
+	branch = release

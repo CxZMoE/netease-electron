@@ -3,8 +3,8 @@ const http = require("http")
 const { url } = require("inspector")
 const { time, clear } = require("console")
 const path = require("path")
-//const server = "http://127.0.0.1:50505"
-const server = "http://39.108.90.170:50505"
+//const server = "http://127.0.0.1:19696"
+const server = "http://39.108.90.170:19696"
 
 var loginData = {}
 // 登录状态
