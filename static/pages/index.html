@@ -3,11 +3,7 @@
 
 <head>
     <title>网易云音乐 Electron</title>
-
-    <script src="../js/dialog.js"></script>
-    <script src="../js/request.js"></script>
-    <script src="../js/netease.js"></script>
-    <script src="../js/nel.js"></script>
+    <script src="../js/nel.ts"></script>
 
     
     <link rel="stylesheet" href="../css/nel.css">
@@ -15,6 +11,7 @@
 </head>
 
 <body id="main">
+    <!-- 标题栏 -->
     <div id="titlebar" class="menu inline darker" >
         <img id="login" src="" alt="banner" class="banner" style="border-radius: 100%;">
         <span id="loginLabel" class="menu-item">
@@ -27,6 +24,7 @@
             
         </span>
     </div>
+    <!-- 侧边栏 -->
     <div class="sidebar">
         <ul class="list-box">
             <li id="favBtn" class="list-item light-dark">我喜欢的音乐</li>
@@ -44,9 +42,12 @@
             
         </div>
     </div>
+    <!-- 主页内容 -->
     <div id="mainPage" class="page">
 
     </div>
+
+    <!-- 播放器前端 -->
     <div class="playbar darker inline">
         <img id="cover" alt="album cover" class="album" />
         <img id="playerLast" class="button menu-item" src="../pics/last.png" />
@@ -66,8 +67,8 @@
         <p id="playlistSheetName" class="tag"></p>
         <ul id="playList"></ul>
     </div>
-    
     <audio id="player" src="" controls hidden></audio>
+    <!-- 播放器前端结束 -->
 </body>
 
 </html>

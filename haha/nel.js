@@ -1,40 +1,35 @@
-const { readFile } = require("fs")
-const { remote } = require('electron')
+const { readFile } = require("fs");
+const { remote } = require('electron');
+const fs = require('fs');
+const log = require('./log'); // 调试用
+
+// 全局常量
+const USR_CONFIG_DIR = remote.app.getPath("home") + "/.moe.cxz.netease-electron";
+
+// 状态变量
+var player;                 // 播放器 <audio/>
+var isMoveProgress = false; // 播放进度条正在移动
+
+
 // 用户目录
-
-const CONFIG_DIR = remote.app.getPath("home") + "/.moe.cxz.netease-electron"
-if (require('fs').exists(CONFIG_DIR, (e) => {
-    if (!e) {
-        //console.log("用户配置文件未找到")
-        require('fs').mkdir(CONFIG_DIR, { mode: "0755" }, () => {
-            //console.log("创建用户配置文件目录")
-        })
+function CheckConfigDir() {
+    let exists = fs.existsSync(USR_CONFIG_DIR);
+    if (!exists) {
+        log.LogE("用户配置文件未找到");
+        fs.mkdir(USR_CONFIG_DIR,{mode: "0755", recursive: true},
+            () => {
+                log.LogI("创建用户配置文件目录");
+            }
+        );
     }
-}))
-    //console.log("home:" + USER_HOME)
+}
 
-
-    var loginInterval = {}
-
-// 进度条开始移动
-var moveProgressPin = false
-
+// [全局定时器] 用于实时监控播放状态
 
 
 window.onload = function () {
-    var player = document.getElementById("player")
-
-    http.get(`${server}/app/log?name=netease-electron&version=v1.1`, (res) => {
-        let str = ''
-        res.on('data', (chunk) => {
-            str += chunk
-        })
-
-        // 用于统计用户数量
-        res.on('end', () => {
-            //console.log("记录统计信息：" + data)
-        })
-    })
+    // [DOM] 获取播放器
+    player = document.getElementById("player");
 
     // 全局timer
     var globalTimer = setInterval(() => {
@@ -309,7 +304,7 @@ window.onload = function () {
     })
 
     // 登陆状态判定
-    fs.readFile(`${CONFIG_DIR}/login.json`, { encoding: "utf8" }, (err, data) => {
+    fs.readFile(`${USR_CONFIG_DIR}/login.json`, { encoding: "utf8" }, (err, data) => {
         if (err) {
             //console.error(err)
             loginStatus = false
@@ -320,7 +315,7 @@ window.onload = function () {
         } else {
             loginData = JSON.parse(data)
             if (loginData.code == 502) {
-                fs.unlink(`${CONFIG_DIR}/login.json`, (err) => {
+                fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
                     new Notification("登录失败", {
                         body: "账号或密码错误"
 
@@ -379,8 +374,6 @@ window.onload = function () {
 
 
 function initCover() {
-
-
     var cover = document.getElementById('cover')
     var player = document.getElementById("player")
     cover.addEventListener("click", (e) => {
@@ -425,7 +418,7 @@ function initProgrss() {
     // 处理拖动
     progressPin.addEventListener('mousedown', (e) => {
         progressPin.setAttribute("l_x", e.x)
-        moveProgressPin = true
+        isMoveProgress = true
     })
     progressPin.addEventListener('mouseup', (e) => {
 
@@ -433,14 +426,14 @@ function initProgrss() {
         let toTime = ((l_x - progress.getBoundingClientRect().x) / progress.getBoundingClientRect().width) * player.getAttribute("length")
         player.currentTime = toTime
 
-        moveProgressPin = false
+        isMoveProgress = false
     })
     progressPin.addEventListener('mouseout', (e) => {
-        moveProgressPin = false
+        isMoveProgress = false
     })
 
     progressPin.addEventListener('mousemove', (e) => {
-        if (moveProgressPin) {
+        if (isMoveProgress) {
 
             let rect = progressPin.getBoundingClientRect()
 
@@ -543,7 +536,7 @@ function initPlayer() {
     player.addEventListener('timeupdate', function (e) {
 
         // 在不拖动进度滑块的时候做：
-        if (!moveProgressPin) {
+        if (!isMoveProgress) {
             // 当前播放时间（秒） 标签
             var ctlabel = document.getElementById("currentTimeLabel")
             // 歌曲长度（秒） 标签
