@@ -1,8 +1,8 @@
 const { readFile } = require("fs")
-
+const { remote } = require('electron')
 // 用户目录
 
-const CONFIG_DIR = require("electron").remote.app.getPath("home") + "/.moe.cxz.netease-electron"
+const CONFIG_DIR = remote.app.getPath("home") + "/.moe.cxz.netease-electron"
 if (require('fs').exists(CONFIG_DIR, (e) => {
     if (!e) {
         //console.log("用户配置文件未找到")
@@ -14,7 +14,7 @@ if (require('fs').exists(CONFIG_DIR, (e) => {
     //console.log("home:" + USER_HOME)
 
 
-var loginInterval = {}
+    var loginInterval = {}
 
 // 进度条开始移动
 var moveProgressPin = false
@@ -23,7 +23,7 @@ var moveProgressPin = false
 
 window.onload = function () {
     var player = document.getElementById("player")
-    
+
     http.get(`${server}/app/log?name=netease-electron&version=v1.1`, (res) => {
         let str = ''
         res.on('data', (chunk) => {
@@ -353,7 +353,7 @@ window.onload = function () {
                     } else {
                         // 登录正常
                         // 先获取我喜欢的音乐
-                        document.getElementById("login").setAttribute("src",loginData.profile.avatarUrl)
+                        document.getElementById("login").setAttribute("src", loginData.profile.avatarUrl)
                         if (loginData.code != 502) {
                             // 有效登录
                             loginStatus = true
@@ -499,11 +499,11 @@ function initSidebar() {
 
     // 心跳点击
     var heartBtn = document.getElementById("heart")
-    heartBtn.addEventListener("click",(e)=>{
+    heartBtn.addEventListener("click", (e) => {
         e.stopPropagation()
         // getFav()
         getHeart()
-    })  
+    })
 
     // 每日推荐被点击
     var dailyRecommendBtn = document.getElementById("dailyRecommendBtn")
