@@ -3,20 +3,18 @@
  * @email: cxzmoe@aliyun.com
  */
 
-const electron = require('electron')
 const { app, BrowserWindow, Tray,Menu } = require('electron')
 const process = require('child_process')
 
 // 启动api
 
-var neteaseApi = process.exec("set PORT=19696 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
-    console.log(stdout)
-    if (err){
-        console.log(err)
-        return
-    }
-})
-
+// var neteaseApi = process.exec("set PORT=19696 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
+//     console.log(stdout)
+//     if (err){
+//         console.log(err)
+//         return
+//     }
+// })
 
 let win = null
 function createWindow(title, width, height) {
@@ -24,16 +22,17 @@ function createWindow(title, width, height) {
         title: title,
         width: width,
         height: height,
-        resizable: false,
+        resizable: true,
         maximizable: true,
         center: true,
         hasShadow:true,
         autoHideMenuBar: true,
-        frame:false,
+        frame: true,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
-            enableRemoteModule: true
+            enableRemoteModule: true,
+            worldSafeExecuteJavaScript: false
             
         },
         icon: __dirname + "/static/pics/BILIBILI.png"

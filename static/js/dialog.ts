@@ -1,6 +1,8 @@
-import { readFile } from "fs";
-import path from 'path';
-import {server} from './netease';
+
+import { remote } from 'electron';
+const { readFile } = remote.require('fs');
+const path = remote.require('path');
+import { server } from './netease';
 
 class Dialog {
     list: Array<any>;

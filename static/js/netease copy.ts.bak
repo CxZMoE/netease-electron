@@ -45,13 +45,13 @@ function writeConfig(data) {
 // 登录
 function login(username, password) {
     http.get(`${server}/login?email=${username}&password=${password}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
 
         })
 
-        res.on('end', () => {
+        res.on('data', (str) => {
             let data = JSON.parse(str)
 
             // 保存登录信息
@@ -85,20 +85,18 @@ function login(username, password) {
 // 签到
 function qd() {
     http.get(`${server}/daily_signin?type=0&cookie=${cookie}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             let data = JSON.parse(str)
             if (res.statusCode == 200) {
                 new Notification("通知", { body: "安卓签到成功，积分+3" })
                 http.get(`${server}/daily_signin?type=0&cookie=${cookie}`, (res) => {
-                    let str = ''
-                    res.on('data', (chunk) => {
-                        str += chunk
-                    })
-                    res.on('end', () => {
+                    
+                    
+                    res.on('data', (str) => {
                         let data = JSON.parse(str)
                         if (res.statusCode == 200) {
                             new Notification("通知", { body: "PC/Web签到成功，积分+2" })
@@ -125,13 +123,13 @@ function logout(username, password) {
 
     http.get(`${server}/logout`, (res) => {
 
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
 
         })
 
-        res.on('end', () => {
+        res.on('data', (str) => {
 
             // 保存登录信息
             if (res.statusCode == 200) {
@@ -156,11 +154,11 @@ function getFav() {
     let uid = loginData.account.id
     let sheetListBox = document.getElementById("sheetListBox")
     http.get(`${server}/user/playlist?uid=${uid}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             if (res.statusCode == 200) {
                 sheets = JSON.parse(str)
                 // 清空内容
@@ -227,11 +225,11 @@ function bindListItemName(list, ids) {
     //console.log("ids:" + ids.split(",").length)
     //console.log(ids)
     http.get(`${server}/song/detail?ids=${ids}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             let songs = JSON.parse(str).songs
             //console.log(JSON.stringify(songs))
             //console.log(lastClickSheet.length)
@@ -304,11 +302,11 @@ function getMusicDetailForLiClick(li) {
 
 
     http.get(`${server}/song/url?id=${li.getAttribute('musicID')}&cookie=${cookie}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             let data = JSON.parse(str).data
             if (data == undefined) {
                 getMusicDetailForLiClick(li)
@@ -334,11 +332,9 @@ function getMusicDetail() {
     let intel = setInterval(() => {
         if (sheets.playlist[player.getAttribute("index")] != undefined) {
             http.get(`${server}/song/url?id=${sheets.playlist[player.getAttribute("index")].id}&cookie=${cookie}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-                res.on('end', () => {
+                
+                
+                res.on('data', (str) => {
                     let musicUrl = JSON.parse(str).data[0].url
                     player.setAttribute('src', musicUrl)
                     //player.play()
@@ -387,11 +383,11 @@ function getplaylist(id) {
     let playlistBox = document.getElementById("playList")
     http.get(`${server}/playlist/detail?id=${id}`, (res) => {
 
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
 
             let plist = JSON.parse(str).playlist
 
@@ -453,11 +449,11 @@ function getSheet(id) {
 
     http.get(`${server}/playlist/detail?id=${id}`, (res) => {
         let sheetListBox = document.getElementById("sheetListBox")
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
 
             let plist = JSON.parse(str).playlist
 
@@ -535,12 +531,12 @@ function getSheets() {
 
     let id = loginData.account.id
     let sheet = {}
-    let str = ''
+    
     http.get(`${server}/user/playlist?uid=${id}`, (res) => {
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             let sheetListBox = document.getElementById("sheetListBox")
 
 
@@ -586,11 +582,11 @@ function getSheets() {
                             //console.log(sheets.playlist[li.getAttribute('index')].id)
                             //console.log(sheets.playlist.length)
                             //console.log(JSON.stringify(sheets.playlist))
-                            let str = ''
+                            
                             res.on('data', (chunk) => {
                                 str += chunk
                             })
-                            res.on('end', () => {
+                            res.on('data', (str) => {
                                 // detail下的playlist
                                 let plist = JSON.parse(str).playlist
 
@@ -662,11 +658,11 @@ function loadDailyRecommandedSongs() {
 
     http.get(`${server}/recommend/songs?cookie=${cookie}`, (res) => {
         let sheetListBox = document.getElementById("sheetListBox")
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             if (res.statusCode != 200) {
                 loadMusicPage()
                 return
@@ -711,11 +707,11 @@ function loadDailyRecommandedSongs() {
                     player.setAttribute("cover", sheets.playlist[li.getAttribute('index')].cover)
                     // 获取播放地址
                     http.get(`${server}/song/url?id=${player.getAttribute("now")}&cookie=${cookie}`, (res) => {
-                        let str = ''
+                        
                         res.on('data', (chunk) => {
                             str += chunk
                         })
-                        res.on('end', () => {
+                        res.on('data', (str) => {
                             let data = JSON.parse(str).data
                             if (data == undefined) {
                                 getMusicDetailForLiClick(li)
@@ -764,11 +760,9 @@ function loadFM() {
 
         // 加载播放FM歌曲
         http.get(`${server}/personal_fm?cookie=${cookie}&timestamp=${new Date().getTime()}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 if (res.statusCode != 200) {
                     loadMusicPage()
                     return
@@ -787,11 +781,9 @@ function loadFM() {
 
                 // 获取播放地址
                 http.get(`${server}/song/url?id=${player.getAttribute("now")}&cookie=${cookie}`, (res) => {
-                    let str = ''
-                    res.on('data', (chunk) => {
-                        str += chunk
-                    })
-                    res.on('end', () => {
+                    
+                    
+                    res.on('data', (str) => {
                         let data = JSON.parse(str).data
                         if (data == undefined) {
                             getMusicDetailForLiClick(li)
@@ -837,11 +829,11 @@ function showComment(page) {
     let musicPanelBottom = document.getElementById("musicPanelBottom")
 
     http.get(`${server}/comment/music?id=${player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             let hot = JSON.parse(str).hotComments
             let normal = JSON.parse(str).comments
             //console.log(str)
@@ -927,11 +919,11 @@ function showComment(page) {
                     page = Number(page) - 1
                     normalcommentList.setAttribute("page", page)
                     http.get(`${server}/comment/music?id=${player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-                        let str = ''
+                        
                         res.on('data', (chunk) => {
                             str += chunk
                         })
-                        res.on('end', () => {
+                        res.on('data', (str) => {
                             let normal = JSON.parse(str).comments
                             //console.log(str)
                             if (normal != undefined) {
@@ -980,11 +972,11 @@ function showComment(page) {
                     //console.log(normalcommentList.getAttribute("page"))
                     //console.log(page)
                     http.get(`${server}/comment/music?id=${player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-                        let str = ''
+                        
                         res.on('data', (chunk) => {
                             str += chunk
                         })
-                        res.on('end', () => {
+                        res.on('data', (str) => {
 
                             let normal = JSON.parse(str).comments
                             //console.log(str)
@@ -1038,11 +1030,9 @@ function loadLikeBtn() {
     likeBtn.addEventListener('click', (e) => {
         e.stopPropagation()
         http.get(`${server}/like?id=${player.getAttribute("now")}&cookie=${cookie}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 if (JSON.parse(str).code == 200) {
                     new Notification("通知", {
                         body: "喜欢歌曲成功"
@@ -1064,11 +1054,9 @@ function loadDislikeBtn() {
     dislikeBtn.addEventListener('click', (e) => {
         e.stopPropagation()
         http.get(`${server}/like?id=${player.getAttribute("now")}&like=false&cookie=${cookie}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 if (JSON.parse(str).code == 200) {
                     console.log(str)
                     new Notification("通知", {
@@ -1109,7 +1097,7 @@ function loadAddcommentBtn() {
         addcommentBtn.addEventListener('click',(e)=>{
             e.stopPropagation()
             http.get(`${server}/comment?type=0&t=1&id=${player.getAttribute("now")}&content=${commentTextBox.value}&cookie=${cookie}`,(res)=>{
-                let str = ''
+                
                 res.on('data',(chunk)=>{
                     str += chunk
 
@@ -1181,11 +1169,11 @@ function showLyric() {
 
 function getLryic(id, lyricBox) {
     http.get(`${server}/lyric?id=${id}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        res.on('data', (str) => {
             currentLyric = []
             let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
 

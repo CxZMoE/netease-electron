@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+      "target": "ES6",
+      "module": "CommonJS",
+      "watch": false,
+      "sourceMap": true,
+      "outDir": "./static/js",
+      "experimentalDecorators": true,
+      "noImplicitAny": false,
+      "types": [] 
+    },
+    "include": [
+        "./static/js"
+    ],
+    "exclude": [
+        "node_modules",
+        "build"
+    ]
+}

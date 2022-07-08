@@ -158,11 +158,10 @@ window.onload = function () {
             //}
 
             http.get(`${server}/search?keywords=${e.target.value}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-                res.on('end', () => {
+                
+                str = ''
+res.on('data', (chunk) => {
+str += chunk
                     let data = JSON.parse(str)
                     if (data == undefined) {
                         //console.log(str)
@@ -194,11 +193,13 @@ window.onload = function () {
                             // 获取音乐详情
                             http.get(`${server}/song/detail?ids=${li.getAttribute("musicID")}`, (res) => {
 
-                                let str = ''
+                                
                                 res.on('data', (chunk) => {
                                     str += chunk
                                 })
-                                res.on('end', () => {
+                                str = ''
+res.on('data', (chunk) => {
+str += chunk
                                     let data = JSON.parse(str)
                                     if (data == undefined) {
                                         //console.log(str)
@@ -222,11 +223,13 @@ window.onload = function () {
 
                                     // 获取音乐URL
                                     http.get(`${server}/song/url?id=${li.getAttribute('musicID')}&cookie=${cookie}`, (res) => {
-                                        let str = ''
+                                        
                                         res.on('data', (chunk) => {
                                             str += chunk
                                         })
-                                        res.on('end', () => {
+                                        str = ''
+res.on('data', (chunk) => {
+str += chunk
                                             let data = JSON.parse(str).data
                                             if (data == undefined) {
                                                 getMusicDetailForLiClick(li)
@@ -332,12 +335,12 @@ window.onload = function () {
 
 
             http.get(`${server}/login/status?cookie=${cookie}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
+                
+                
 
-                res.on('end', () => {
+                str = ''
+res.on('data', (chunk) => {
+str += chunk
                     let data = JSON.parse(str)
                     if (data.msg == "需要登录") {
                         loginStatus = false
@@ -738,11 +741,11 @@ function play() {
         /*
         if ( count > 0) {
             http.get(`${server}/song/url?id=${[0].id}&cookie=${cookie}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-                res.on('end', () => {
+                
+                
+                str = ''
+res.on('data', (chunk) => {
+str += chunk
                     let musicUrl = JSON.parse(str).data[0].url
                     player.setAttribute('src', musicUrl)
                     player.play()
@@ -783,11 +786,13 @@ function last() {
 
     // 获取歌曲播放地址
     http.get(`${server}/song/url?id=${mainplaylist[player.getAttribute('index')].id}&cookie=${cookie}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        str = ''
+res.on('data', (chunk) => {
+str += chunk
             let musicUrl = JSON.parse(str).data[0].url
             player.setAttribute('src', musicUrl)
             player.play()
@@ -847,11 +852,13 @@ function next() {
 
 
     http.get(`${server}/song/url?id=${mainplaylist[player.getAttribute('index')].id}&cookie=${cookie}`, (res) => {
-        let str = ''
+        
         res.on('data', (chunk) => {
             str += chunk
         })
-        res.on('end', () => {
+        str = ''
+res.on('data', (chunk) => {
+str += chunk
 
             // 更新封面
             let cover = mainplaylist[player.getAttribute('index')].cover

@@ -3,16 +3,22 @@
 
 <head>
     <title>网易云音乐 Electron</title>
-    <script src="../js/nel.ts"></script>
+    <script>
+        const { Player } = require("../js/nel.js")
+        window.onload = function () {
+            var player = new Player();
+            player.InitDom();
+        }
+    </script>
 
-    
+
     <link rel="stylesheet" href="../css/nel.css">
     <link rel="stylesheet" href="../css/dialog.css">
 </head>
 
 <body id="main">
     <!-- 标题栏 -->
-    <div id="titlebar" class="menu inline darker" >
+    <div id="titlebar" class="menu inline darker">
         <img id="login" src="" alt="banner" class="banner" style="border-radius: 100%;">
         <span id="loginLabel" class="menu-item">
             未登录
@@ -21,7 +27,7 @@
         </span>
         <img id="heart" src="../pics/心.png" alt="heart" class="menu-item">
         <span id="musicTitle" class=" music-title">
-            
+
         </span>
     </div>
     <!-- 侧边栏 -->
@@ -35,11 +41,11 @@
 
         <p class="tag">歌单详情</p>
         <div id="sheetDetialBox" class="sheet-detial-box">
-            <img id="sheetDetialBoxImg" src="" alt="" class="sheet-detial-box-img"/>
+            <img id="sheetDetialBoxImg" src="" alt="" class="sheet-detial-box-img" />
             <div class="sheet-detail-content">
 
             </div>
-            
+
         </div>
     </div>
     <!-- 主页内容 -->

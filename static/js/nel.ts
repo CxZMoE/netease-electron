@@ -1,9 +1,9 @@
-import { readFile } from 'fs';
 import { remote } from 'electron';
-import fs from 'fs';
+const fs = remote.require('fs');
+const { readFile } = remote.require('fs');
+const path = remote.require('path');
+const http = remote.require('http');
 import log from './log'; // 调试用
-import path from 'path';
-import http from 'http';
 import Netease from './netease';
 import Dialog from "./dialog";
 
@@ -26,10 +26,9 @@ function CheckConfigDir() {
             }
         );
     }
-
 }
 
-class Player {
+export class Player {
     player: HTMLAudioElement; // 播放器 <audio/>
     playList: HTMLUListElement;
     sheetListBox: HTMLUListElement;
@@ -57,10 +56,10 @@ class Player {
         // 初始化网易服务
         this.netease = new Netease(this.player);
         netease = this.netease;
-        window.onload = this.InitDom;
     }
 
     InitDom() {
+        console.log('init dom');
         var player = this.player;
         // 播放器播放模式设置为默认模式
         this.player.setAttribute("mode", "normal");
@@ -192,11 +191,9 @@ class Player {
                 //}
                 let target = <HTMLInputElement>e.target;
                 http.get(`${netease.server}/search?keywords=${target.value}`, (res) => {
-                    let str = ''
-                    res.on('data', (chunk) => {
-                        str += chunk
-                    })
-                    res.on('end', () => {
+                    
+                    
+                    res.on('data', (str) => {
                         let data = JSON.parse(str)
                         if (data == undefined) {
                             //console.log(str)
@@ -228,11 +225,11 @@ class Player {
                                 // 获取音乐详情
                                 http.get(`${netease.server}/song/detail?ids=${li.getAttribute("musicID")}`, (res) => {
 
-                                    let str = ''
+                                    
                                     res.on('data', (chunk) => {
                                         str += chunk
                                     })
-                                    res.on('end', () => {
+                                    res.on('data', (str) => {
                                         let data = JSON.parse(str)
                                         if (data == undefined) {
                                             //console.log(str)
@@ -256,11 +253,11 @@ class Player {
 
                                         // 获取音乐URL
                                         http.get(`${netease.server}/song/url?id=${li.getAttribute('musicID')}&cookie=${netease.cookie}`, (res) => {
-                                            let str = ''
+                                            
                                             res.on('data', (chunk) => {
                                                 str += chunk
                                             })
-                                            res.on('end', () => {
+                                            res.on('data', (str) => {
                                                 let data = JSON.parse(str).data
                                                 if (data == undefined) {
                                                     this.getMusicDetailForLiClick(li)
@@ -338,8 +335,85 @@ class Player {
         })
 
         readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
+            console.log(data);
             (<HTMLDivElement>document.getElementById("mainPage")).innerHTML = data.toString();
             this.player.setAttribute("currentPage", "home")
+        })
+
+        // 登陆状态判定
+        fs.readFile(`${USR_CONFIG_DIR}/login.json`, { encoding: "utf8" }, (err, data) => {
+            if (err) {
+                //console.error(err)
+                netease.loginStatus = false
+                new Notification("通知", { body: "您还未登录，请先登录。" })
+                this.netease.data = {}
+                dialog.newLoginDialog("loginDialog", function () {
+                    let username = <HTMLInputElement>document.getElementById("username");
+                    let password = <HTMLInputElement>document.getElementById("password");
+                    netease.login(username.value, password.value);
+                });
+                return
+            } else {
+                netease.data = JSON.parse(data)
+                if (netease.data.code == 502) {
+                    fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
+                        new Notification("登录失败", {
+                            body: "账号或密码错误"
+
+                        })
+                        dialog.newLoginDialog("loginDialog", function () {
+                            let username = <HTMLInputElement>document.getElementById("username");
+                            let password = <HTMLInputElement>document.getElementById("password");
+                            netease.login(username.value, password.value);
+                        });
+                        return
+                    })
+                    return
+                }
+
+                netease.cookie = netease.data.cookie
+
+                document.getElementById("loginLabel").innerText = netease.data.profile.nickname
+
+
+                http.get(`${netease.server}/login/status?cookie=${netease.cookie}`, (res) => {
+                    
+                    res.on('data', (str) => {
+                        let data = JSON.parse(str)
+                        if (data.msg == "需要登录") {
+                            netease.loginStatus = false
+                            new Notification("通知", { body: "登录过期，请重新登录" })
+                            netease.data = {}
+                            dialog.newLoginDialog("loginDialog", function () {
+                                let username = <HTMLInputElement>document.getElementById("username");
+                                let password = <HTMLInputElement>document.getElementById("password");
+                                netease.login(username.value, password.value);
+                            });
+
+                        } else {
+                            // 登录正常
+                            // 先获取我喜欢的音乐
+                            document.getElementById("login").setAttribute("src", netease.data.profile.avatarUrl)
+                            if (data.code != 502) {
+                                // 有效登录
+                                netease.loginStatus = true
+                                // 初始化
+                                this.getFav()
+
+                                this.initProgrss()
+                                this.initSidebar()
+                                this.initPlayer()
+                                // 初始化封面点击
+                                this.initCover()
+
+                                //alert(JSON.stringify(loginData))
+
+
+                            }
+                        }
+                    })
+                })
+            }
         })
 
 
@@ -644,11 +718,9 @@ class Player {
             /*
             if ( count > 0) {
                 http.get(`${netease.server}/song/url?id=${[0].id}&cookie=${netease.cookie}`, (res) => {
-                    let str = ''
-                    res.on('data', (chunk) => {
-                        str += chunk
-                    })
-                    res.on('end', () => {
+                    
+                    
+                    res.on('data', (str) => {
                         let musicUrl = JSON.parse(str).data[0].url
                         this.player.setAttribute('src', musicUrl)
                         player.play()
@@ -690,11 +762,9 @@ class Player {
 
         // 获取歌曲播放地址
         http.get(`${netease.server}/song/url?id=${this.mainplaylist[this.player.getAttribute('index')].id}&cookie=${netease.cookie}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 let musicUrl = JSON.parse(str).data[0].url
                 this.player.setAttribute('src', musicUrl)
                 player.play()
@@ -754,11 +824,9 @@ class Player {
 
 
         http.get(`${netease.server}/song/url?id=${this.mainplaylist[this.player.getAttribute('index')].id}&cookie=${netease.cookie}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
 
                 // 更新封面
                 let cover = this.mainplaylist[this.player.getAttribute('index')].cover
@@ -784,11 +852,9 @@ class Player {
 
         var player = this.player;
         http.get(`${netease.server}/song/url?id=${li.getAttribute('musicID')}&cookie=${netease.cookie}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 let data = JSON.parse(str).data
                 if (data == undefined) {
                     this.getMusicDetailForLiClick(li)
@@ -846,11 +912,9 @@ class Player {
         let uid = netease.data.account.id
         let sheetListBox = document.getElementById("sheetListBox")
         http.get(`${netease.server}/user/playlist?uid=${uid}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 if (res.statusCode == 200) {
                     //console.log("获取我最喜欢的音乐")
                     let sheetlist = JSON.parse(str).playlist
@@ -880,11 +944,9 @@ class Player {
         let url = `${netease.server}/playmode/intelligence/list?id=${mid}&pid=${sheetid}&cookie=${netease.cookie}`
         //console.log("get heart:"+url)
         http.get(url, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 if (res.statusCode == 200) {
                     //console.log("获取心跳模式歌单")
                     //console.log(str)
@@ -907,6 +969,7 @@ class Player {
 
     // 绑定实时当前歌单显示框
     attachPlaylist() {
+        console.log("attachPlaylist");
         let sheetListBox = document.getElementById("sheetListBox")
         // 只有在不是私人FM模式下才执行
         if (this.player.getAttribute("mode") != "fm") {
@@ -982,13 +1045,11 @@ class Player {
                 }
 
                 http.get(`${netease.server}/song/detail?ids=${new_ids}`, (res) => {
-                    let str = ''
+                    
 
-                    res.on('data', (chunk) => {
-                        str += chunk
-                    })
+                    
 
-                    res.on('end', () => {
+                    res.on('data', (str) => {
                         //console.log(`${netease.server}/song/detail?ids=${new_ids}`)
                         ////console.log(str)
                         let songs = JSON.parse(str).songs
@@ -1058,12 +1119,7 @@ class Player {
 
         } else {
             http.get(`${netease.server}/song/detail?ids=${ids}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-
-                res.on('end', () => {
+                res.on('data', (str) => {
                     //console.log(`${netease.server}/song/detail?ids=${ids}`)
                     //console.log(str)
                     let songs = JSON.parse(str).songs
@@ -1323,11 +1379,9 @@ class Player {
                 // 获取歌单列表控件
                 let sheetListBox = document.getElementById("sheetListBox")
 
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-                res.on('end', () => {
+                
+                
+                res.on('data', (str) => {
                     console.log(str)
                     this.mainplaylist_id = id
                     // 这里实际上获取到一个歌单的详情，不是歌单列表哦2333
@@ -1455,14 +1509,12 @@ class Player {
 
         let id = netease.data.account.id
         let sheet = {}
-        let str = ''
+        
 
         // 根据用户ID请求用户歌单简略信息
         http.get(`${netease.server}/user/playlist?uid=${id}`, (res) => {
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+             
+            res.on('data', (str) => {
                 // 获取列表盒子
                 let sheetListBox = document.getElementById("sheetListBox")
 
@@ -1518,13 +1570,13 @@ class Player {
 
                         // 请求单个歌单的详情
                         http.get(`${netease.server}/playlist/detail?id=${sheetlist[li.getAttribute('index')].id}`, (res) => {
-                            let str = ''
+                            
 
                             res.on('data', (chunk) => {
                                 str += chunk
                             })
 
-                            res.on('end', () => {
+                            res.on('data', (str) => {
                                 // 详细播放列表信息 对象
                                 let playlist = JSON.parse(str).playlist
 
@@ -1597,11 +1649,9 @@ class Player {
 
         http.get(`${netease.server}/recommend/songs?cookie=${netease.cookie}`, (res) => {
             let sheetListBox = document.getElementById("sheetListBox")
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 if (res.statusCode != 200) {
                     this.loadMusicPage()
                     return
@@ -1780,11 +1830,9 @@ class Player {
 
         //console.log("加载评论：" + `${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`)
         http.get(`${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 let hot = JSON.parse(str).hotComments
                 let normal = JSON.parse(str).comments
                 ////console.log(str)
@@ -1870,11 +1918,11 @@ class Player {
                         page = Number(page) - 1
                         normalcommentList.setAttribute("page", String(page))
                         http.get(`${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-                            let str = ''
+                            
                             res.on('data', (chunk) => {
                                 str += chunk
                             })
-                            res.on('end', () => {
+                            res.on('data', (str) => {
                                 let normal = JSON.parse(str).comments
                                 ////console.log(str)
                                 if (normal != undefined) {
@@ -1923,11 +1971,11 @@ class Player {
                         ////console.log(normalcommentList.getAttribute("page"))
                         ////console.log(page)
                         http.get(`${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-                            let str = ''
+                            
                             res.on('data', (chunk) => {
                                 str += chunk
                             })
-                            res.on('end', () => {
+                            res.on('data', (str) => {
 
                                 let normal = JSON.parse(str).comments
                                 ////console.log(str)
@@ -1981,11 +2029,9 @@ class Player {
         likeBtn.addEventListener('click', (e) => {
             e.stopPropagation()
             http.get(`${netease.server}/like?id=${this.player.getAttribute("now")}&cookie=${netease.cookie}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-                res.on('end', () => {
+                
+                
+                res.on('data', (str) => {
                     //console.log(str)
                     if (JSON.parse(str).code == 200) {
                         new Notification("通知", {
@@ -2010,11 +2056,9 @@ class Player {
         collectBtn.addEventListener("click", (e) => {
             let mid = this.player.getAttribute("now")
             http.get(`${netease.server}/user/playlist?uid=${netease.data.account.id}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-                res.on('end', () => {
+                
+                
+                res.on('data', (str) => {
                     let sheetlist = JSON.parse(str).playlist
                     //console.log("[url]"+`${netease.server}/user/playlist?uid=${this.data.account.id}`+"sheetlist:"+str)
                     let req = new XMLHttpRequest()
@@ -2031,11 +2075,9 @@ class Player {
         dislikeBtn.addEventListener('click', (e) => {
             e.stopPropagation()
             http.get(`${netease.server}/like?id=${this.player.getAttribute("now")}&like=false&cookie=${netease.cookie}`, (res) => {
-                let str = ''
-                res.on('data', (chunk) => {
-                    str += chunk
-                })
-                res.on('end', () => {
+                
+                
+                res.on('data', (str) => {
                     if (JSON.parse(str).code == 200) {
                         //console.log(str)
                         new Notification("通知", {
@@ -2076,12 +2118,7 @@ class Player {
             addcommentBtn.addEventListener('click', (e) => {
                 e.stopPropagation()
                 http.get(`${netease.server}/comment?type=0&t=1&id=${this.player.getAttribute("now")}&content=${commentTextBox.value}&cookie=${netease.cookie}`, (res) => {
-                    let str = ''
-                    res.on('data', (chunk) => {
-                        str += chunk
-
-                    })
-                    res.on('end', () => {
+                    res.on('data', (str) => {
                         if (JSON.parse(str).code == 200) {
                             new Notification("通知", {
                                 body: "评论发送成功"
@@ -2147,11 +2184,9 @@ class Player {
 
     getLryic(id, lyricBox) {
         http.get(`${netease.server}/lyric?id=${id}`, (res) => {
-            let str = ''
-            res.on('data', (chunk) => {
-                str += chunk
-            })
-            res.on('end', () => {
+            
+             
+            res.on('data', (str) => {
                 this.currentLyric = []
                 let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
 
