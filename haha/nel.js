@@ -16,7 +16,7 @@ function CheckConfigDir() {
     let exists = fs.existsSync(USR_CONFIG_DIR);
     if (!exists) {
         log.LogE("用户配置文件未找到");
-        fs.mkdir(USR_CONFIG_DIR,{mode: "0755", recursive: true},
+        fs.mkdir(USR_CONFIG_DIR, { mode: "0755", recursive: true },
             () => {
                 log.LogI("创建用户配置文件目录");
             }
@@ -158,10 +158,8 @@ window.onload = function () {
             //}
 
             http.get(`${server}/search?keywords=${e.target.value}`, (res) => {
-                
-                str = ''
-res.on('data', (chunk) => {
-str += chunk
+                res.on('data', (chunk) => {
+                    str += chunk
                     let data = JSON.parse(str)
                     if (data == undefined) {
                         //console.log(str)
@@ -192,14 +190,8 @@ str += chunk
                             e.stopPropagation()
                             // 获取音乐详情
                             http.get(`${server}/song/detail?ids=${li.getAttribute("musicID")}`, (res) => {
-
-                                
                                 res.on('data', (chunk) => {
                                     str += chunk
-                                })
-                                str = ''
-res.on('data', (chunk) => {
-str += chunk
                                     let data = JSON.parse(str)
                                     if (data == undefined) {
                                         //console.log(str)
@@ -223,13 +215,8 @@ str += chunk
 
                                     // 获取音乐URL
                                     http.get(`${server}/song/url?id=${li.getAttribute('musicID')}&cookie=${cookie}`, (res) => {
-                                        
                                         res.on('data', (chunk) => {
                                             str += chunk
-                                        })
-                                        str = ''
-res.on('data', (chunk) => {
-str += chunk
                                             let data = JSON.parse(str).data
                                             if (data == undefined) {
                                                 getMusicDetailForLiClick(li)
@@ -335,12 +322,8 @@ str += chunk
 
 
             http.get(`${server}/login/status?cookie=${cookie}`, (res) => {
-                
-                
-
-                str = ''
-res.on('data', (chunk) => {
-str += chunk
+                res.on('data', (chunk) => {
+                    str += chunk
                     let data = JSON.parse(str)
                     if (data.msg == "需要登录") {
                         loginStatus = false
@@ -365,8 +348,6 @@ str += chunk
                             initCover()
 
                             //alert(JSON.stringify(loginData))
-
-
                         }
                     }
                 })
@@ -786,13 +767,8 @@ function last() {
 
     // 获取歌曲播放地址
     http.get(`${server}/song/url?id=${mainplaylist[player.getAttribute('index')].id}&cookie=${cookie}`, (res) => {
-        
         res.on('data', (chunk) => {
             str += chunk
-        })
-        str = ''
-res.on('data', (chunk) => {
-str += chunk
             let musicUrl = JSON.parse(str).data[0].url
             player.setAttribute('src', musicUrl)
             player.play()
@@ -852,13 +828,8 @@ function next() {
 
 
     http.get(`${server}/song/url?id=${mainplaylist[player.getAttribute('index')].id}&cookie=${cookie}`, (res) => {
-        
         res.on('data', (chunk) => {
             str += chunk
-        })
-        str = ''
-res.on('data', (chunk) => {
-str += chunk
 
             // 更新封面
             let cover = mainplaylist[player.getAttribute('index')].cover

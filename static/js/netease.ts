@@ -1,4 +1,4 @@
-import { remote } from 'electron';
+import * as remote from '@electron/remote';
 const fs = remote.require('fs');
 const http = remote.require('http');
 import Dialog from './dialog'
@@ -30,132 +30,101 @@ class Netease {
     // 登录
     login(username, password) {
         console.log('login')
-        http.get(`${server}/login?email=${username}&password=${password}`, (res) => {
-            console.log('login http')
-            res.on('data', (chunk) => {
-                console.log('end')
-                let data = JSON.parse(chunk)
-                console.log(data)
-                // 保存登录信息
-                if (data.code != 502) {
-                    this.data = data;
-                    console.log(this.data);
-                    this.cookie = this.data.cookie
-                    new Notification("通知", {
-                        body: "登录成功"
-                    })
-                    document.getElementById("loginLabel").innerText = "已登录"
-                    this.loginStatus = true
-                    this.writeConfig(String(chunk))
-                    let d = new Dialog()
-                    d.closeDialog("loginDialog")
-                    remote.getCurrentWindow().reload()
+        fetch(`${server}/login?email=${username}&password=${password}`).then(res => res.json()).then(data => {
+            console.log('end')
+            console.log(data)
+            // 保存登录信息
+            if (data.code != 502) {
+                this.data = data;
+                console.log(this.data);
+                this.cookie = this.data.cookie
+                new Notification("通知", {
+                    body: "登录成功"
+                })
+                document.getElementById("loginLabel").innerText = "已登录"
+                this.loginStatus = true
+                this.writeConfig(JSON.stringify(data));
+                let d = new Dialog()
+                d.closeDialog("loginDialog")
+                remote.getCurrentWindow().reload()
 
-                } else {
-                    fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
-                        new Notification("登录失败", {
-                            body: "账号或密码错误"
-                        })
-                        return
+            } else {
+                fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
+                    new Notification("登录失败", {
+                        body: "账号或密码错误"
                     })
-                    //alert("密码错误：" + str)
-                }
-            })
+                    return
+                })
+                //alert("密码错误：" + str)
+            }
         })
     }
 
     // 签到
     qd() {
-        http.get(`${server}/daily_signin?type=0&cookie=${this.cookie}`, (res) => {
-            
-             
-            res.on('data', (str) => {
-                let data = JSON.parse(str)
-                if (res.statusCode == 200) {
-                    new Notification("通知", { body: "安卓签到成功，积分+3" })
-                    http.get(`${server}/daily_signin?type=0&cookie=${this.cookie}`, (res) => {
-                        
-                        res.on('data', (chunk) => {
-                            str += chunk
-                        })
-                        res.on('data', (str) => {
-                            let data = JSON.parse(str)
-                            if (res.statusCode == 200) {
-                                new Notification("通知", { body: "PC/Web签到成功，积分+2" })
-                            } else if (data.code == -2) {
-                                new Notification("通知", { body: "您今天已经签到过了>w<" })
-                            } else {
-                                //alert(str)
-                                new Notification("通知", { body: "PC/Web签到失败" })
-                            }
-                        })
-                    })
-                } else if (data.code == -2) {
-                    new Notification("通知", { body: "您今天已经签到过了>w<" })
-                } else {
-                    //alert(str)
-                    new Notification("通知", { body: "安卓签到失败" })
-                }
-            })
+        fetch(`${server}/daily_signin?type=0&cookie=${this.cookie}`).then(res => res.json()).then(data => {
+            if (data.code == 200) {
+                new Notification("通知", { body: "安卓签到成功，积分+3" })
+                fetch(`${server}/daily_signin?type=0&cookie=${this.cookie}`).then(res => res.json()).then(data => {
+                    if (data.code == 200) {
+                        new Notification("通知", { body: "PC/Web签到成功，积分+2" })
+                    } else if (data.code == -2) {
+                        new Notification("通知", { body: "您今天已经签到过了>w<" })
+                    } else {
+                        //alert(str)
+                        new Notification("通知", { body: "PC/Web签到失败" })
+                    }
+                })
+            } else if (data.code == -2) {
+                new Notification("通知", { body: "您今天已经签到过了>w<" })
+            } else {
+                //alert(str)
+                new Notification("通知", { body: "安卓签到失败" })
+            }
         })
     }
 
     // 登出
     logout(username, password) {
-
-        http.get(`${server}/logout`, (res) => {
-
-
-            res.on('data', (str) => {
-
-                // 保存登录信息
-                if (res.statusCode == 200) {
-                    fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
-                        //console.log(err)
-                        new Notification("通知", {
-                            body: "登出失败"
-                        })
-                        return
-                    })
+        fetch(`${server}/logout`).then(res => res.json()).then(data => {
+            // 删除登录信息
+            if (data.code == 200) {
+                fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
+                    //console.log(err)
                     new Notification("通知", {
-                        body: "登出成功"
+                        body: "登出失败"
                     })
-                }
+                    return
+                })
+                new Notification("通知", {
+                    body: "登出成功"
+                })
+            }
 
-            })
         })
     }
 
     // 获取音乐URL
     getMusicUrl(musicId, callback) {
-        http.get(`${server}/song/url?id=${musicId}&cookie=${this.cookie}`, (res) => {
-            
-             
-            res.on('data', (str) => {
-                let data = JSON.parse(str).data
-                // 定义歌曲Url变量并赋值
-                let musicUrl = data[0].url
-                callback(musicUrl);
-            }
-            )
+        fetch(`${server}/song/url?id=${musicId}&cookie=${this.cookie}`).then(res => res.json()).then(data => {
+            let d = data.data
+            // 定义歌曲Url变量并赋值
+            let musicUrl = d[0].url
+            callback(musicUrl);
         })
     }
 
     // 获取FM播放列表
     getFMList(callback, onerr?: Function) {
-        http.get(`${server}/personal_fm?cookie=${this.cookie}&timestamp=${new Date().getTime()}`, (res) => {
-            
-             
-            res.on('data', (str) => {
-                if (res.statusCode != 200) {
-                    onerr();
-                    return
-                }
+        fetch(`${server}/personal_fm?cookie=${this.cookie}&timestamp=${new Date().getTime()}`).then(res=>res.json()).then(data=>{
+            if (data.code != 200) {
+                onerr();
+                return
+            }
 
-                // FM歌曲列表对象
-                let fms = JSON.parse(str).data
-                callback(fms)
-            })
+            // FM歌曲列表对象
+            let fms = data.data
+            callback(fms);
         })
     }
 

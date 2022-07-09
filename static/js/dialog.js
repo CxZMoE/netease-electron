@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const electron_1 = require("electron");
-const { readFile } = electron_1.remote.require('fs');
-const path = electron_1.remote.require('path');
+const remote = require("@electron/remote");
+const { readFile } = remote.require('fs');
+const path = remote.require('path');
 const netease_1 = require("./netease");
 class Dialog {
     constructor() {
@@ -191,7 +191,7 @@ class Dialog {
                         if (req.status == 200 && req.readyState == 4) {
                             let data = req.responseText;
                             //console.log(data)
-                            let status = JSON.parse(data).code;
+                            let status = JSON.parse(data).status;
                             if (status == 200) {
                                 new Notification("通知", {
                                     body: "收藏歌曲成功"

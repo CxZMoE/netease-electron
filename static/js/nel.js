@@ -1,18 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = exports.USR_CONFIG_DIR = void 0;
-const electron_1 = require("electron");
-const fs = electron_1.remote.require('fs');
-const { readFile } = electron_1.remote.require('fs');
-const path = electron_1.remote.require('path');
-const http = electron_1.remote.require('http');
+const remote = require("@electron/remote");
+const fs = remote.require('fs');
+const { readFile } = remote.require('fs');
+const path = remote.require('path');
+const http = remote.require('http');
 const log_1 = require("./log"); // 调试用
 const netease_1 = require("./netease");
 const dialog_1 = require("./dialog");
 var netease;
 var player;
+var _this;
 // 全局常量
-exports.USR_CONFIG_DIR = electron_1.remote.app.getPath("home") + "/.moe.cxz.netease-electron";
+exports.USR_CONFIG_DIR = remote.app.getPath("home") + "/.moe.cxz.netease-electron";
 var dialog = new dialog_1.default();
 // 用户目录
 function CheckConfigDir() {
@@ -35,43 +36,46 @@ class Player {
         // 检查用户目录
         CheckConfigDir();
         // 初始化网易服务
-        this.netease = new netease_1.default(this.player);
-        netease = this.netease;
+        netease = new netease_1.default(this.player);
+        this.netease = netease;
+        _this = this;
     }
     InitDom() {
         console.log('init dom');
-        var player = this.player;
+        var player = _this.player;
         // 播放器播放模式设置为默认模式
-        this.player.setAttribute("mode", "normal");
+        player.setAttribute("mode", "normal");
         // [全局定时器] 用于实时监控播放状态
         setInterval(() => {
-            let sheetListBox = document.getElementById("sheetListBox"); // 歌单列表
+            this.sheetListBox = document.getElementById("sheetListBox"); // 歌单列表
             let playList = document.getElementById("playList"); // 播放列表
             // 突出显示当前播放歌曲, 更新背景色
-            if (this.player.getAttribute("mode") != "fm") {
+            if (_this.player.getAttribute("mode") != "fm") {
                 // 如果歌单列表存在，更新项目的背景色
-                if (sheetListBox) {
-                    let sheetListBoxItemSelected = sheetListBox.children.item(Number(this.player.getAttribute("index")));
-                    for (let i = 0; i < sheetListBox.children.length; i++) {
-                        let sheetListBoxItem = sheetListBox.children.item(i);
-                        // [其它] 背景
-                        sheetListBoxItem.style.backgroundColor = "#303030";
-                        // [选中项]
-                        sheetListBoxItemSelected.style.backgroundColor = "#1e1e1e";
-                    }
-                }
-                // 如果播放列表存在，更新项目的背景色
-                if (playList && playList.children.length > 0) {
-                    let sheetListBoxItemSelected = sheetListBox.children.item(Number(this.player.getAttribute("index")));
-                    for (let i = 0; i < playList.children.length; i++) {
-                        let sheetListBoxItem = sheetListBox.children.item(i);
-                        sheetListBoxItem.style.backgroundColor = "#303030";
-                        sheetListBoxItemSelected.style.backgroundColor = "#1e1e1e";
+                if (this.sheetListBox) {
+                    if (this.sheetListBox.children.length > 0) {
+                        let sheetListBoxItemSelected = this.sheetListBox.children.item(Number(_this.player.getAttribute("index")));
+                        for (let i = 0; i < this.sheetListBox.children.length; i++) {
+                            let sheetListBoxItem = this.sheetListBox.children.item(i);
+                            // [其它] 背景
+                            sheetListBoxItem.style.backgroundColor = "#303030";
+                            // [选中项]
+                            sheetListBoxItemSelected.style.backgroundColor = "#1e1e1e";
+                        }
+                        // 如果播放列表存在，更新项目的背景色
+                        if (playList && playList.children.length > 0) {
+                            let sheetListBoxItemSelected = this.sheetListBox.children.item(Number(_this.player.getAttribute("index")));
+                            for (let i = 0; i < playList.children.length; i++) {
+                                let sheetListBoxItem = this.sheetListBox.children.item(i);
+                                sheetListBoxItem.style.backgroundColor = "#303030";
+                                sheetListBoxItemSelected.style.backgroundColor = "#1e1e1e";
+                            }
+                        }
                     }
                 }
             }
             // 更新播放按钮状态
-            let status = this.player.getAttribute("status");
+            let status = _this.player.getAttribute("status");
             let playBtn = document.getElementById("playerPlay");
             if (status == 'pause') {
                 playBtn.setAttribute('src', '../pics/play.png');
@@ -92,7 +96,7 @@ class Player {
                 if (playlistBox.style.height == "300px")
                     playlistBox.style.height = "0px";
                 else {
-                    let playIndex = Number(this.player.getAttribute("index"));
+                    let playIndex = Number(_this.player.getAttribute("index"));
                     playlistBox.style.height = "300px";
                     playlistBox.scrollTop = playList.children.item(playIndex).offsetTop - 155;
                 }
@@ -136,8 +140,8 @@ class Player {
         // 隐藏窗口事件
         document.getElementById("titlebar").addEventListener("dblclick", (e) => {
             e.stopPropagation();
-            require('electron').remote.BrowserWindow.getFocusedWindow().hide();
-            require('electron').remote.getGlobal("windowHided").is = true;
+            remote.BrowserWindow.getFocusedWindow().hide();
+            remote.getGlobal("windowHided").is = true;
         });
         // 事先加载搜索页面
         readFile(path.join(__dirname, "../pages/search.html"), (err, data) => {
@@ -147,6 +151,7 @@ class Player {
             searchBox.setAttribute("id", "searchBox");
             searchBox.className = "search-box";
             searchBox.innerHTML = data.toString();
+            _this.sheetListBox = document.getElementById("sheetListBox");
             body.appendChild(searchBox);
             // 搜索事件
             let searchKeywords = document.getElementById("searchKeywords");
@@ -156,90 +161,84 @@ class Player {
                 //    return
                 //}
                 let target = e.target;
-                http.get(`${netease.server}/search?keywords=${target.value}`, (res) => {
-                    res.on('data', (str) => {
-                        let data = JSON.parse(str);
-                        if (data == undefined) {
-                            //console.log(str)
-                            return;
-                        }
-                        // 搜索结果数组
-                        let results = data.result.songs;
-                        let resultBox = document.getElementById("searchResultBox");
-                        resultBox.innerHTML = "";
-                        let ul = document.createElement("UL");
-                        ul.className = "sheet-list-box";
-                        resultBox.appendChild(ul);
-                        for (let i = 0; i < results.length; i++) {
-                            let li = document.createElement("LI");
-                            li.className = "sheet-list-item";
-                            // 音乐名称
-                            li.innerText = results[i].name;
-                            // 音乐ID
-                            li.setAttribute("musicID", results[i].id);
-                            li.setAttribute('index', i.toString());
-                            // 添加列表子项
-                            ul.appendChild(li);
-                            li.addEventListener("click", (e) => {
-                                e.stopPropagation();
-                                // 获取音乐详情
-                                http.get(`${netease.server}/song/detail?ids=${li.getAttribute("musicID")}`, (res) => {
-                                    res.on('data', (chunk) => {
-                                        str += chunk;
-                                    });
-                                    res.on('data', (str) => {
-                                        let data = JSON.parse(str);
-                                        if (data == undefined) {
-                                            //console.log(str)
-                                            return;
-                                        }
-                                        let song = data.songs[0];
-                                        // 封面
-                                        li.setAttribute("cover", song.al.picUrl);
-                                        // 作者
-                                        let authors = song.ar;
-                                        let author = '';
-                                        for (let i = 0; i < authors.length; i++) {
-                                            if (i == authors.length - 1) {
-                                                author += authors[i].name;
-                                                continue;
-                                            }
-                                            author += authors[i].name + "/";
-                                        }
-                                        // 获取音乐URL
-                                        http.get(`${netease.server}/song/url?id=${li.getAttribute('musicID')}&cookie=${netease.cookie}`, (res) => {
-                                            res.on('data', (chunk) => {
-                                                str += chunk;
-                                            });
-                                            res.on('data', (str) => {
-                                                let data = JSON.parse(str).data;
-                                                if (data == undefined) {
-                                                    this.getMusicDetailForLiClick(li);
-                                                    return;
-                                                }
-                                                let musicUrl = JSON.parse(str).data[0].url;
-                                                let searchItem = [{ "name": li.innerText, "id": li.getAttribute('musicID'), "cover": li.getAttribute('cover'), "author": author }];
-                                                searchItem.push.apply(searchItem, this.mainplaylist);
-                                                this.mainplaylist = searchItem;
-                                                searchItem = null;
-                                                this.player.setAttribute('index', "0");
-                                                this.player.setAttribute('src', musicUrl);
-                                                player.play();
-                                                this.updateCover(li.getAttribute("cover"));
-                                                this.player.setAttribute('status', 'play');
-                                                this.player.setAttribute('now', li.getAttribute('musicID'));
-                                                // 隐藏搜索框
-                                                searchBox.style.height = "0px";
-                                                searchBox.style.visibility = "hidden";
-                                            });
-                                        });
-                                    });
+                fetch(`${netease.server}/search?keywords=${target.value}`).then((res) => {
+                    return res.json();
+                }).then((data) => {
+                    if (data == undefined) {
+                        //console.log(str)
+                        return;
+                    }
+                    // 搜索结果数组
+                    let results = data.result.songs;
+                    let resultBox = document.getElementById("searchResultBox");
+                    resultBox.innerHTML = "";
+                    let ul = document.createElement("UL");
+                    ul.className = "sheet-list-box";
+                    resultBox.appendChild(ul);
+                    for (let i = 0; i < results.length; i++) {
+                        let li = document.createElement("LI");
+                        li.className = "sheet-list-item";
+                        // 音乐名称
+                        li.innerText = results[i].name;
+                        // 音乐ID
+                        li.setAttribute("musicID", results[i].id);
+                        li.setAttribute('index', i.toString());
+                        // 添加列表子项
+                        ul.appendChild(li);
+                        li.addEventListener("click", (e) => {
+                            e.stopPropagation();
+                            // 获取音乐详情
+                            fetch(`${netease.server}/song/detail?ids=${li.getAttribute("musicID")}`).then(res => res.json()).then(data => {
+                                if (data == undefined) {
+                                    //console.log(str)
+                                    return;
+                                }
+                                let song = data.songs[0];
+                                // 封面
+                                li.setAttribute("cover", song.al.picUrl);
+                                // 作者
+                                let authors = song.ar;
+                                let author = '';
+                                for (let i = 0; i < authors.length; i++) {
+                                    if (i == authors.length - 1) {
+                                        author += authors[i].name;
+                                        continue;
+                                    }
+                                    author += authors[i].name + "/";
+                                }
+                                // 获取音乐URL
+                                fetch(`${netease.server}/song/url?id=${li.getAttribute('musicID')}&cookie=${netease.cookie}`).then(res => res.json()).then((data) => {
+                                    if (data == undefined) {
+                                        this.getMusicDetailForLiClick(li);
+                                        return;
+                                    }
+                                    let musicUrl = data.data[0].url;
+                                    let searchItem = [{ "name": li.innerText, "id": li.getAttribute('musicID'), "cover": li.getAttribute('cover'), "author": author }];
+                                    searchItem.push.apply(searchItem, _this.mainplaylist);
+                                    _this.mainplaylist = searchItem;
+                                    searchItem = null;
+                                    player.setAttribute('index', "0");
+                                    player.setAttribute('src', musicUrl);
+                                    player.play();
+                                    _this.updateCover(li.getAttribute("cover"));
+                                    player.setAttribute('status', 'play');
+                                    player.setAttribute('now', li.getAttribute('musicID'));
+                                    // 隐藏搜索框
+                                    searchBox.style.height = "0px";
+                                    searchBox.style.visibility = "hidden";
                                 });
                             });
-                        }
-                    });
+                        });
+                    }
                 });
             });
+        });
+        // 事先加载主页
+        readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
+            console.log(data);
+            document.getElementById("mainPage").innerHTML = data.toString();
+            player.setAttribute("currentPage", "home");
+            _this.sheetListBox = document.getElementById("sheetListBox");
         });
         // 搜索页面展现事件
         document.addEventListener("keydown", (e) => {
@@ -262,7 +261,7 @@ class Player {
         });
         // 登录按钮事件
         document.getElementById("login").addEventListener('click', (e) => {
-            var netease = this.netease;
+            var netease = _this.netease;
             // 登录
             if (netease.loginStatus == false) {
                 dialog.newLoginDialog("loginDialog", function () {
@@ -275,18 +274,13 @@ class Player {
                 netease.qd();
             }
         });
-        readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
-            console.log(data);
-            document.getElementById("mainPage").innerHTML = data.toString();
-            this.player.setAttribute("currentPage", "home");
-        });
         // 登陆状态判定
         fs.readFile(`${exports.USR_CONFIG_DIR}/login.json`, { encoding: "utf8" }, (err, data) => {
             if (err) {
                 //console.error(err)
                 netease.loginStatus = false;
                 new Notification("通知", { body: "您还未登录，请先登录。" });
-                this.netease.data = {};
+                _this.netease.data = {};
                 dialog.newLoginDialog("loginDialog", function () {
                     let username = document.getElementById("username");
                     let password = document.getElementById("password");
@@ -312,37 +306,34 @@ class Player {
                 }
                 netease.cookie = netease.data.cookie;
                 document.getElementById("loginLabel").innerText = netease.data.profile.nickname;
-                http.get(`${netease.server}/login/status?cookie=${netease.cookie}`, (res) => {
-                    res.on('data', (str) => {
-                        let data = JSON.parse(str);
-                        if (data.msg == "需要登录") {
-                            netease.loginStatus = false;
-                            new Notification("通知", { body: "登录过期，请重新登录" });
-                            netease.data = {};
-                            dialog.newLoginDialog("loginDialog", function () {
-                                let username = document.getElementById("username");
-                                let password = document.getElementById("password");
-                                netease.login(username.value, password.value);
-                            });
+                fetch(`${netease.server}/login/status?cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+                    if (data.msg == "需要登录") {
+                        netease.loginStatus = false;
+                        new Notification("通知", { body: "登录过期，请重新登录" });
+                        netease.data = {};
+                        dialog.newLoginDialog("loginDialog", function () {
+                            let username = document.getElementById("username");
+                            let password = document.getElementById("password");
+                            netease.login(username.value, password.value);
+                        });
+                    }
+                    else {
+                        // 登录正常
+                        // 先获取我喜欢的音乐
+                        document.getElementById("login").setAttribute("src", netease.data.profile.avatarUrl);
+                        if (data.code != 502) {
+                            // 有效登录
+                            netease.loginStatus = true;
+                            // 初始化
+                            this.getFav();
+                            this.initProgrss();
+                            this.initSidebar();
+                            this.initPlayer();
+                            // 初始化封面点击
+                            this.initCover();
+                            //alert(JSON.stringify(loginData))
                         }
-                        else {
-                            // 登录正常
-                            // 先获取我喜欢的音乐
-                            document.getElementById("login").setAttribute("src", netease.data.profile.avatarUrl);
-                            if (data.code != 502) {
-                                // 有效登录
-                                netease.loginStatus = true;
-                                // 初始化
-                                this.getFav();
-                                this.initProgrss();
-                                this.initSidebar();
-                                this.initPlayer();
-                                // 初始化封面点击
-                                this.initCover();
-                                //alert(JSON.stringify(loginData))
-                            }
-                        }
-                    });
+                    }
                 });
             }
         });
@@ -352,7 +343,7 @@ class Player {
         // 为播放条添加拖拽效果
         var progressPin = document.getElementById("progressPin");
         var progress = document.getElementById("progress");
-        var player = this.player;
+        var player = _this.player;
         var ctlabel = document.getElementById("currentTimeLabel");
         // 处理拖动
         progressPin.addEventListener('mousedown', (e) => {
@@ -361,7 +352,7 @@ class Player {
         });
         progressPin.addEventListener('mouseup', (e) => {
             let l_x = Number(progressPin.getAttribute("l_x"));
-            let toTime = ((l_x - progress.getBoundingClientRect().x) / progress.getBoundingClientRect().width) * Number(this.player.getAttribute("length"));
+            let toTime = ((l_x - progress.getBoundingClientRect().x) / progress.getBoundingClientRect().width) * Number(_this.player.getAttribute("length"));
             player.currentTime = toTime;
             this.isMoveProgress = false;
         });
@@ -373,8 +364,8 @@ class Player {
                 let rect = progressPin.getBoundingClientRect();
                 // 上一次坐标
                 let l_x = Number(progressPin.getAttribute("l_x"));
-                let toTime = ((l_x - progress.getBoundingClientRect().x) / progress.getBoundingClientRect().width) * Number(this.player.getAttribute("length"));
-                ctlabel.innerText = toTime / 60 + ":" + (toTime % 60);
+                let toTime = ((l_x - progress.getBoundingClientRect().x) / progress.getBoundingClientRect().width) * Number(_this.player.getAttribute("length"));
+                ctlabel.innerText = Number(toTime / 60).toFixed(0) + ":" + (Number(toTime % 60).toFixed(toTime % 60));
                 // 移动
                 progressPin.style.left = rect.x + (e.x - l_x) + 'px';
                 // 设置上一次坐标
@@ -391,9 +382,10 @@ class Player {
             e.stopPropagation();
             readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                 document.getElementById("mainPage").innerHTML = data.toString();
-                player.getSheets();
+                _this.sheetListBox = document.getElementById("sheetListBox");
                 player.player.setAttribute("currentPage", "home");
                 player.player.setAttribute("mode", "normal");
+                player.getSheets();
             });
         });
         // 我喜欢的音乐按钮点击
@@ -402,9 +394,10 @@ class Player {
             e.stopPropagation();
             readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                 document.getElementById("mainPage").innerHTML = data.toString();
-                player.getFav();
+                _this.sheetListBox = document.getElementById("sheetListBox");
                 document.getElementById("player").setAttribute("currentPage", "home");
                 player.player.setAttribute("mode", "normal");
+                player.getFav();
             });
         });
         // 私人FM点击
@@ -428,6 +421,7 @@ class Player {
             player.player.setAttribute("mode", "normal");
             readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                 document.getElementById("mainPage").innerHTML = data.toString();
+                _this.sheetListBox = document.getElementById("sheetListBox");
                 player.loadDailyRecommandedSongs();
                 document.getElementById("player").setAttribute("currentPage", "home");
                 player.player.setAttribute("mode", "normal");
@@ -439,9 +433,9 @@ class Player {
         // 获取播放器控件
         var player = document.getElementById("player");
         // 设置初始播放序号
-        this.player.setAttribute('index', "0");
+        player.setAttribute('index', "0");
         // 初始状态为停止
-        this.player.setAttribute('status', 'stop');
+        player.setAttribute('status', 'stop');
         // 播放完毕时候下一首
         player.addEventListener('ended', (function () {
             // 下一首
@@ -452,22 +446,22 @@ class Player {
         // 更新播放进度
         player.addEventListener('timeupdate', (function (e) {
             // 在不拖动进度滑块的时候做：
-            if (!this.isMoveProgress) {
+            if (!_this.isMoveProgress) {
                 // 当前播放时间（秒） 标签
                 var ctlabel = document.getElementById("currentTimeLabel");
                 // 歌曲长度（秒） 标签
                 var lengthLabel = document.getElementById("lengthLabel");
-                let musicLength = Number(this.player.getAttribute('length'));
+                let musicLength = Number(_this.player.getAttribute('length'));
                 // 更新当前时间
-                ctlabel.innerText = `${player.currentTime / 60}:${player.currentTime % 60}`;
+                ctlabel.innerText = Number(player.currentTime / 60).toFixed(0) + ":" + (Number(player.currentTime % 60).toFixed(0));
                 // 更新总时长
-                lengthLabel.innerText = `${musicLength / 60}:${musicLength % 60}`;
+                lengthLabel.innerText = Number(musicLength / 60).toFixed(0) + ":" + (Number(musicLength % 60).toFixed(0));
                 // 标记歌曲进度
                 let progress = player.currentTime / player.duration;
                 // progress为播放进度百分比小数形式
-                this.player.setAttribute('progress', progress.toString());
+                player.setAttribute('progress', progress.toString());
                 // 当前时间（秒）
-                this.player.setAttribute('time', player.currentTime.toString());
+                player.setAttribute('time', Number(player.currentTime).toFixed(0).toString());
                 // 获取进度条滑块
                 var progressPin = document.getElementById("progressPin");
                 // 获取进度条
@@ -477,29 +471,29 @@ class Player {
                 // 移动进度条
                 progressPin.style.left = x + offset + 'px';
             }
-        }).bind(this));
+        }));
         // 加载完毕后设置长度参数
         player.addEventListener('canplay', () => {
-            this.player.setAttribute('length', player.duration.toString());
+            player.setAttribute('length', player.duration.toString());
             // 更新封面
-            let cover = this.mainplaylist[this.player.getAttribute('index')].cover;
-            this.updateCover(cover);
-            document.getElementById("musicTitle").innerText = "正在播放：" + this.mainplaylist[this.player.getAttribute('index')].name; //+ " - " + mainplaylist[this.player.getAttribute('index')].author
+            // console.log(_this.mainplaylist)
+            let cover = _this.mainplaylist[_this.player.getAttribute('index')].cover;
+            _this.updateCover(cover);
+            document.getElementById("musicTitle").innerText = "正在播放：" + _this.mainplaylist[_this.player.getAttribute('index')].name; //+ " - " + mainplaylist[_this.player.getAttribute('index')].author
             // 显示歌词
             clearInterval(this.lyricInterval);
-            if (this.player.getAttribute("currentPage") == 'music') {
-                this.showLyric();
-                this.loadComment(1);
+            if (_this.player.getAttribute("currentPage") == 'music') {
+                _this.showLyric();
+                _this.loadComment(1);
             }
         });
-        var _this = this;
         // 错误处理
         player.addEventListener('error', (e) => {
             new Notification("无法播放", {
                 body: "无法播放，可能是没有版权或者权限。"
             });
             //console.log("无法播放，可能是没有版权或者权限。")
-            //console.log(this.player)
+            //console.log(_this.player)
             _this.next();
         });
         // Buttons
@@ -516,20 +510,21 @@ class Player {
         playBtn.addEventListener('click', function () {
             _this.play();
         });
+        this.bindGlobalShortcut();
     }
     /**
      *  绑定全局按键
      */
     bindGlobalShortcut() {
         // 绑定全局案件
-        let globalShortcut = require('electron').remote.globalShortcut;
+        let globalShortcut = remote.globalShortcut;
         let nextKey = 'CommandOrControl+Alt+Right';
         let lastKey = 'CommandOrControl+Alt+Left';
         let playPauseKey = `CommandOrControl+Alt+P`;
         let volUpKey = `CommandOrControl+Alt+Up`;
         let volDownKey = `CommandOrControl+Alt+Down`;
         var _this = this;
-        var _player = this.player;
+        var _player = _this.player;
         let nextShortcut = globalShortcut.register(nextKey, () => {
             _this.next();
             if (!nextShortcut) {
@@ -572,16 +567,16 @@ class Player {
      */
     // 播放
     play() {
-        var player = this.player;
+        var player = _this.player;
         // 获取播放器控件
         // 获取播放状态
-        let status = this.player.getAttribute('status');
+        let status = _this.player.getAttribute('status');
         // 获取播放按钮
         let playBtn = document.getElementById("playerPlay");
         // 如果是暂停
         if (status == 'pause') {
             player.play();
-            this.player.setAttribute('status', 'play');
+            player.setAttribute('status', 'play');
             // 暂停图标
             playBtn.setAttribute('src', '../pics/pause.png');
         }
@@ -589,7 +584,7 @@ class Player {
             player.currentTime = 0;
             player.play();
             // 播放列表项目数量 争议 是否需要重新获取歌曲URL
-            //let count = this.player.getAttribute("count")
+            //let count = _this.player.getAttribute("count")
             // 播放地址
             /*
             if ( count > 0) {
@@ -598,11 +593,11 @@ class Player {
                     
                     res.on('data', (str) => {
                         let musicUrl = JSON.parse(str).data[0].url
-                        this.player.setAttribute('src', musicUrl)
+                        player.setAttribute('src', musicUrl)
                         player.play()
     
-                        this.player.setAttribute('status', 'play')
-                        this.player.setAttribute('now', [0].id)
+                        player.setAttribute('status', 'play')
+                        player.setAttribute('now', [0].id)
                         // 暂停图标
                         playBtn.setAttribute('src', '../pics/play.png')
                     })
@@ -611,218 +606,202 @@ class Player {
         }
         else {
             player.pause();
-            this.player.setAttribute('status', 'pause');
+            player.setAttribute('status', 'pause');
             // 播放图标
             playBtn.setAttribute('src', '../pics/play.png');
         }
     }
     // 上一首
     last() {
-        var player = this.player;
+        var player = _this.player;
         // 获取播放器控件
         // 设置上次播放的歌曲ID和序号
-        this.player.setAttribute("last", this.player.getAttribute('now'));
-        this.player.setAttribute("lastIndex", this.player.getAttribute("index"));
+        player.setAttribute("last", _this.player.getAttribute('now'));
+        player.setAttribute("lastIndex", _this.player.getAttribute("index"));
         // 播放列表数量
-        let count = this.mainplaylist.length;
-        var index = Number(this.player.getAttribute('index'));
+        let count = _this.mainplaylist.length;
+        var index = Number(_this.player.getAttribute('index'));
         if (index == 0) {
-            this.player.setAttribute('index', String(count - 1));
+            player.setAttribute('index', String(count - 1));
         }
         else {
-            this.player.setAttribute('index', String(index - 1));
+            player.setAttribute('index', String(index - 1));
         }
         // 获取歌曲播放地址
-        http.get(`${netease.server}/song/url?id=${this.mainplaylist[this.player.getAttribute('index')].id}&cookie=${netease.cookie}`, (res) => {
-            res.on('data', (str) => {
-                let musicUrl = JSON.parse(str).data[0].url;
-                this.player.setAttribute('src', musicUrl);
-                player.play();
-                this.player.setAttribute('status', 'play');
-                this.player.setAttribute('now', this.mainplaylist[this.player.getAttribute('index')].id);
-            });
+        fetch(`${netease.server}/song/url?id=${_this.mainplaylist[_this.player.getAttribute('index')].id}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+            let musicUrl = data.data[0].url;
+            player.setAttribute('src', musicUrl);
+            player.play();
+            player.setAttribute('status', 'play');
+            player.setAttribute('now', _this.mainplaylist[_this.player.getAttribute('index')].id);
         });
     }
     // 下一首
     next() {
         // 获取播放器控件
-        var player = this.player;
+        var player = _this.player;
         // 设置上次播放的歌曲ID和序号
-        this.player.setAttribute("last", this.player.getAttribute('now'));
-        this.player.setAttribute("lastIndex", this.player.getAttribute("index"));
-        let mode = this.player.getAttribute("mode");
-        if (mode == "fm" && this.player.getAttribute('index') == "0") {
+        player.setAttribute("last", _this.player.getAttribute('now'));
+        player.setAttribute("lastIndex", _this.player.getAttribute("index"));
+        let mode = _this.player.getAttribute("mode");
+        if (mode == "fm" && _this.player.getAttribute('index') == "0") {
             this.loadFM();
             return;
         }
         // 播放列表数量
-        let count = Number(this.player.getAttribute("count"));
-        let index = Number(this.player.getAttribute('index'));
+        let count = Number(_this.player.getAttribute("count"));
+        let index = Number(_this.player.getAttribute('index'));
         // 设置这次播放的歌曲ID和序号
         // 列表循环
         switch (this.playMode) {
             case "list-loop":
                 {
                     if (index == count - 1) {
-                        this.player.setAttribute('index', "0");
+                        player.setAttribute('index', "0");
                     }
                     else {
-                        this.player.setAttribute('index', String(index + 1));
+                        player.setAttribute('index', String(index + 1));
                     }
                     break;
                 }
             case "single-loop":
                 {
-                    this.player.setAttribute('index', this.player.getAttribute('index'));
+                    player.setAttribute('index', _this.player.getAttribute('index'));
                     break;
                 }
             case "random":
                 {
-                    this.player.setAttribute('index', String(count * Math.random()));
+                    player.setAttribute('index', String(count * Math.random()));
                     break;
                 }
             default:
                 break;
         }
-        http.get(`${netease.server}/song/url?id=${this.mainplaylist[this.player.getAttribute('index')].id}&cookie=${netease.cookie}`, (res) => {
-            res.on('data', (str) => {
-                // 更新封面
-                let cover = this.mainplaylist[this.player.getAttribute('index')].cover;
-                this.updateCover(cover);
-                // 播放地址
-                let musicUrl = JSON.parse(str).data[0].url;
-                this.player.setAttribute('src', musicUrl);
-                player.play();
-                // 设置当前播放的音乐ID
-                this.player.setAttribute('now', this.mainplaylist[this.player.getAttribute('index')].id);
-                // 修改播放器播放状态为播放
-                this.player.setAttribute('status', 'play');
-            });
+        fetch(`${netease.server}/song/url?id=${_this.mainplaylist[_this.player.getAttribute('index')].id}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+            let cover = _this.mainplaylist[_this.player.getAttribute('index')].cover;
+            _this.updateCover(cover);
+            // 播放地址
+            let musicUrl = data.data[0].url;
+            player.setAttribute('src', musicUrl);
+            player.play();
+            // 设置当前播放的音乐ID
+            player.setAttribute('now', _this.mainplaylist[_this.player.getAttribute('index')].id);
+            // 修改播放器播放状态为播放
+            player.setAttribute('status', 'play');
         });
     }
     getMusicDetailForLiClick(li) {
         // 获取播放器控件
-        var player = this.player;
-        http.get(`${netease.server}/song/url?id=${li.getAttribute('musicID')}&cookie=${netease.cookie}`, (res) => {
-            res.on('data', (str) => {
-                let data = JSON.parse(str).data;
-                if (data == undefined) {
-                    this.getMusicDetailForLiClick(li);
-                    return;
-                }
-                let musicUrl = JSON.parse(str).data[0].url;
-                this.player.setAttribute('src', musicUrl);
-                player.play();
-                this.player.setAttribute('status', 'play');
-                this.player.setAttribute('now', li.getAttribute('musicID'));
-            });
+        var player = _this.player;
+        fetch(`${netease.server}/song/url?id=${li.getAttribute('musicID')}&cookie=${netease.cookie}`).then(res => res.json()).then((data) => {
+            if (data == undefined) {
+                this.getMusicDetailForLiClick(li);
+                return;
+            }
+            let musicUrl = data.data[0].url;
+            player.setAttribute('src', musicUrl);
+            player.play();
+            player.setAttribute('status', 'play');
+            player.setAttribute('now', li.getAttribute('musicID'));
         });
     }
     initCover() {
         var cover = document.getElementById('cover');
-        var player = this.player;
+        var player = _this.player;
         cover.addEventListener("click", (e) => {
             e.stopPropagation();
-            let page = this.player.getAttribute("currentPage");
+            let page = _this.player.getAttribute("currentPage");
             if (page == "music") {
                 readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                     let MainPage = document.getElementById("mainPage");
                     MainPage.innerHTML = data.toString();
-                    //console.log("load sheet:" + this.player.getAttribute('sheet'))
-                    this.getSheet(this.player.getAttribute('sheet'));
-                    document.getElementById("player").setAttribute("currentPage", "home");
+                    _this.sheetListBox = document.getElementById("sheetListBox");
+                    //console.log("load sheet:" + _this.player.getAttribute('sheet'))
+                    _this.getSheet(_this.player.getAttribute('sheet'), _this.mainplaylist);
+                    player.setAttribute("currentPage", "home");
                     // 加载歌词
-                    this.showLyric();
+                    // _this.showLyric()
                     // 更新封面
-                    this.updateCover(this.mainplaylist[this.player.getAttribute('index')].cover);
+                    // _this.updateCover(_this.mainplaylist[_this.player.getAttribute('index')].cover)
                     // 加载评论
-                    this.loadComment(1);
-                    /// 加载喜不喜欢按钮
-                    this.loadLikeBtn();
-                    this.loadCollectBtn();
+                    // _this.loadComment(1)
+                    // /// 加载喜不喜欢按钮
+                    // _this.loadLikeBtn()
+                    // _this.loadCollectBtn()
                     //loadDislikeBtn()
                     // 加载开始评论按钮
-                    this.loadAddcommentBtn();
+                    // _this.loadAddcommentBtn()
                 });
             }
             else {
                 this.loadMusicPage();
+                console.log("not music");
+                // _this.loadAddcommentBtn()
             }
         });
     }
     // 获取我喜欢的音乐
     getFav() {
         let uid = netease.data.account.id;
-        let sheetListBox = document.getElementById("sheetListBox");
-        http.get(`${netease.server}/user/playlist?uid=${uid}`, (res) => {
-            res.on('data', (str) => {
-                if (res.statusCode == 200) {
-                    //console.log("获取我最喜欢的音乐")
-                    let sheetlist = JSON.parse(str).playlist;
-                    // 清空内容
-                    sheetListBox.innerHTML = "";
-                    // 设置当前歌单为我喜欢的音乐
-                    this.player.setAttribute("sheet", sheetlist[0].id);
-                    // 设置当前播放的歌单名称
-                    this.player.setAttribute('sheetName', sheetlist[0].name);
-                    // 获取歌单歌曲列表
-                    this.getSheet(sheetlist[0].id);
-                }
-            });
+        fetch(`${netease.server}/user/playlist?uid=${uid}`).then(res => res.json()).then(data => {
+            let sheetlist = data.playlist;
+            // 清空内容
+            _this.sheetListBox.innerHTML = "";
+            // 设置当前歌单为我喜欢的音乐
+            player.setAttribute("sheet", sheetlist[0].id);
+            // 设置当前播放的歌单名称
+            player.setAttribute('sheetName', sheetlist[0].name);
+            // 获取歌单歌曲列表
+            _this.getSheet(sheetlist[0].id, _this.mainplaylist);
         });
     }
     // 获取心跳模式
     getHeart() {
-        let mid = this.mainplaylist[this.player.getAttribute('index')].id;
-        let sheetid = this.mainplaylist_id;
+        let mid = _this.mainplaylist[_this.player.getAttribute('index')].id;
+        let sheetid = _this.mainplaylist_id;
         let url = `${netease.server}/playmode/intelligence/list?id=${mid}&pid=${sheetid}&cookie=${netease.cookie}`;
         //console.log("get heart:"+url)
-        http.get(url, (res) => {
-            res.on('data', (str) => {
-                if (res.statusCode == 200) {
-                    //console.log("获取心跳模式歌单")
-                    //console.log(str)
-                    let sheetlist = JSON.parse(str).data;
-                    // 清空内容
-                    this.sheetListBox.innerHTML = "";
-                    // 设置当前歌单为我喜欢的音乐
-                    this.player.setAttribute("sheet", String(sheetid));
-                    // 设置当前播放的歌单名称
-                    this.player.setAttribute('sheetName', sheetlist[0].songInfo.name);
-                    // 获取歌单歌曲列表
-                    this.getSheet("heart", sheetlist);
-                }
-            });
+        fetch(url).then(res => res.json()).then(data => {
+            //console.log("获取心跳模式歌单")
+            //console.log(str)
+            let sheetlist = data.data;
+            // 清空内容
+            _this.sheetListBox.innerHTML = "";
+            // 设置当前歌单为我喜欢的音乐
+            player.setAttribute("sheet", String(sheetid));
+            // 设置当前播放的歌单名称
+            player.setAttribute('sheetName', sheetlist[0].songInfo.name);
+            // 获取歌单歌曲列表
+            _this.getSheet("heart", sheetlist);
         });
     }
     // 绑定实时当前歌单显示框
     attachPlaylist() {
         console.log("attachPlaylist");
-        let sheetListBox = document.getElementById("sheetListBox");
         // 只有在不是私人FM模式下才执行
-        if (this.player.getAttribute("mode") != "fm") {
+        if (_this.player.getAttribute("mode") != "fm") {
             let playList = document.getElementById("playList");
             let playlistSheetName = document.getElementById("playlistSheetName");
-            playlistSheetName.innerText = this.player.getAttribute("sheetName");
+            playlistSheetName.innerText = _this.player.getAttribute("sheetName");
             playList.innerHTML = "";
             //console.log("attach:" + sheetListBox)
-            for (let i = 0; i < sheetListBox.children.length; i++) {
-                let c = sheetListBox.children.item(i).cloneNode(true);
+            for (let i = 0; i < _this.sheetListBox.children.length; i++) {
+                let c = _this.sheetListBox.children.item(i).cloneNode(true);
                 let title = c.getElementsByTagName("P")[0];
                 title.innerText = title.innerText.split("-")[0];
                 c.addEventListener('click', () => {
-                    this.player.setAttribute("mode", "normal");
+                    player.setAttribute("mode", "normal");
                     // 初始化主播放列表
-                    this.initMainPlaylist(playList);
+                    _this.initMainPlaylist();
                     //attachPlaylist()
                     // 设置上次播放的歌曲ID
-                    this.player.setAttribute("last", this.player.getAttribute('now'));
+                    player.setAttribute("last", _this.player.getAttribute('now'));
                     // 设置上次播放的序号
-                    this.player.setAttribute("lastIndex", this.player.getAttribute("index"));
+                    player.setAttribute("lastIndex", _this.player.getAttribute("index"));
                     // 设置当前播放的index
-                    this.player.setAttribute('index', c.getAttribute('index'));
+                    player.setAttribute('index', c.getAttribute('index'));
                     // 获取歌曲播放Url
-                    this.sourceMusicUrl(c);
+                    _this.sourceMusicUrl(c);
                 });
                 playList.appendChild(c);
             }
@@ -860,79 +839,28 @@ class Player {
                         new_ids = new_ids + ids_s[j] + ",";
                     }
                 }
-                http.get(`${netease.server}/song/detail?ids=${new_ids}`, (res) => {
-                    res.on('data', (str) => {
-                        //console.log(`${netease.server}/song/detail?ids=${new_ids}`)
-                        ////console.log(str)
-                        let songs = JSON.parse(str).songs;
-                        if (songs == undefined) {
-                            this.bindListItemName(list, ids);
-                            return;
-                        }
-                        for (let i = 0; i < songs.length; i++) {
-                            let item_index = step * limit + i;
-                            // 为列表项目绑定歌曲名
-                            list.children.item(item_index).setAttribute("name", songs[i].name);
-                            //console.log('['+count+']get one: '+songs[i].name)
-                            // 为列表项目绑定封面
-                            list.children.item(item_index).setAttribute("cover", songs[i].al.picUrl);
-                            // 为列表项目绑定专辑ID
-                            list.children.item(item_index).setAttribute("albumId", songs[i].al.id);
-                            // 为列表项目绑定专辑名称
-                            list.children.item(item_index).setAttribute("albumName", songs[i].al.name);
-                            // 为列表项目生成作者字符串
-                            let authors = songs[i].ar;
-                            let author = '';
-                            for (let i = 0; i < authors.length; i++) {
-                                if (i == authors.length - 1) {
-                                    author += authors[i].name;
-                                    continue;
-                                }
-                                author += authors[i].name + "/";
-                            }
-                            list.children.item(item_index).setAttribute('author', author);
-                            // 列表项目左侧的歌曲封面
-                            let coverLeft = document.createElement("IMG");
-                            coverLeft.style.float = "left";
-                            coverLeft.style.width = "35px";
-                            coverLeft.style.height = "35px";
-                            coverLeft.setAttribute("src", songs[i].al.picUrl);
-                            // 列表项目的歌曲名称
-                            let p = document.createElement("P");
-                            p.innerText = songs[i].name + " - " + author;
-                            list.children[item_index].appendChild(coverLeft);
-                            list.children[item_index].appendChild(p);
-                            count++;
-                            if (count == ids_size - 1) {
-                                // 初始化主播放列表（第一次肯定为空）
-                                if (this.firstLoad) {
-                                    this.initMainPlaylist(list);
-                                }
-                            }
-                        }
-                    });
-                });
-            }
-        }
-        else {
-            http.get(`${netease.server}/song/detail?ids=${ids}`, (res) => {
-                res.on('data', (str) => {
-                    //console.log(`${netease.server}/song/detail?ids=${ids}`)
-                    //console.log(str)
-                    let songs = JSON.parse(str).songs;
+                fetch(`${netease.server}/song/detail?ids=${new_ids}`).then(res => res.json()).then(data => {
+                    //console.log(`${netease.server}/song/detail?ids=${new_ids}`)
+                    ////console.log(str)
+                    let songs = data.songs;
                     if (songs == undefined) {
-                        this.bindListItemName(list, ids);
+                        _this.bindListItemName(list, ids);
                         return;
                     }
                     for (let i = 0; i < songs.length; i++) {
+                        let item_index = step * limit + i;
+                        if (!list.children.item(item_index)) {
+                            break;
+                        }
                         // 为列表项目绑定歌曲名
-                        list.children.item("i").setAttribute("name", songs[i].name);
+                        list.children.item(item_index).setAttribute("name", songs[i].name);
+                        //console.log('['+count+']get one: '+songs[i].name)
                         // 为列表项目绑定封面
-                        list.children.item("i").setAttribute("cover", songs[i].al.picUrl);
+                        list.children.item(item_index).setAttribute("cover", songs[i].al.picUrl);
                         // 为列表项目绑定专辑ID
-                        list.children.item("i").setAttribute("albumId", songs[i].al.id);
+                        list.children.item(item_index).setAttribute("albumId", songs[i].al.id);
                         // 为列表项目绑定专辑名称
-                        list.children.item("i").setAttribute("albumName", songs[i].al.name);
+                        list.children.item(item_index).setAttribute("albumName", songs[i].al.name);
                         // 为列表项目生成作者字符串
                         let authors = songs[i].ar;
                         let author = '';
@@ -943,7 +871,7 @@ class Player {
                             }
                             author += authors[i].name + "/";
                         }
-                        list.children.item("i").setAttribute('author', author);
+                        list.children.item(item_index).setAttribute('author', author);
                         // 列表项目左侧的歌曲封面
                         let coverLeft = document.createElement("IMG");
                         coverLeft.style.float = "left";
@@ -953,31 +881,78 @@ class Player {
                         // 列表项目的歌曲名称
                         let p = document.createElement("P");
                         p.innerText = songs[i].name + " - " + author;
-                        list.children[i].appendChild(coverLeft);
-                        list.children[i].appendChild(p);
-                    }
-                    // 初始化主播放列表（第一次肯定为空）
-                    if (this.firstLoad) {
-                        this.initMainPlaylist(list);
+                        list.children[item_index].appendChild(coverLeft);
+                        list.children[item_index].appendChild(p);
+                        count++;
+                        if (count == ids_size - 1) {
+                            // 初始化主播放列表（第一次肯定为空）
+                            if (this.firstLoad) {
+                                _this.initMainPlaylist();
+                            }
+                        }
                     }
                 });
+            }
+        }
+        else {
+            fetch(`${netease.server}/song/detail?ids=${ids}`).then(res => res.json()).then(data => {
+                let songs = data.songs;
+                if (songs == undefined) {
+                    _this.bindListItemName(list, ids);
+                    return;
+                }
+                for (let i = 0; i < songs.length; i++) {
+                    // 为列表项目绑定歌曲名
+                    list.children.item(i).setAttribute("name", songs[i].name);
+                    // 为列表项目绑定封面
+                    list.children.item(i).setAttribute("cover", songs[i].al.picUrl);
+                    // 为列表项目绑定专辑ID
+                    list.children.item(i).setAttribute("albumId", songs[i].al.id);
+                    // 为列表项目绑定专辑名称
+                    list.children.item(i).setAttribute("albumName", songs[i].al.name);
+                    // 为列表项目生成作者字符串
+                    let authors = songs[i].ar;
+                    let author = '';
+                    for (let i = 0; i < authors.length; i++) {
+                        if (i == authors.length - 1) {
+                            author += authors[i].name;
+                            continue;
+                        }
+                        author += authors[i].name + "/";
+                    }
+                    list.children.item(i).setAttribute('author', author);
+                    // 列表项目左侧的歌曲封面
+                    let coverLeft = document.createElement("IMG");
+                    coverLeft.style.float = "left";
+                    coverLeft.style.width = "35px";
+                    coverLeft.style.height = "35px";
+                    coverLeft.setAttribute("src", songs[i].al.picUrl);
+                    // 列表项目的歌曲名称
+                    let p = document.createElement("P");
+                    p.innerText = songs[i].name + " - " + author;
+                    list.children[i].appendChild(coverLeft);
+                    list.children[i].appendChild(p);
+                }
+                // 初始化主播放列表（第一次肯定为空）
+                if (this.firstLoad) {
+                    _this.initMainPlaylist();
+                }
             });
         }
     }
     // 生成IDS请求参数
     generateIdsList() {
-        let sheetListBox = document.getElementById("sheetListBox");
-        if (sheetListBox == undefined) {
+        if (_this.sheetListBox == undefined) {
             console.log("sheetlistbox is undefined");
         }
         let ids = '';
         ////console.log(sheetListBox)
-        for (let i = 0; i < sheetListBox.children.length; i++) {
-            if (i == sheetListBox.children.length - 1) {
-                ids += sheetListBox.children[i].getAttribute('musicID');
+        for (let i = 0; i < _this.sheetListBox.children.length; i++) {
+            if (i == _this.sheetListBox.children.length - 1) {
+                ids += _this.sheetListBox.children[i].getAttribute('musicID');
             }
             else {
-                ids += sheetListBox.children[i].getAttribute('musicID') + ',';
+                ids += _this.sheetListBox.children[i].getAttribute('musicID') + ',';
             }
         }
         return ids;
@@ -985,31 +960,32 @@ class Player {
     // 歌单项目点击后获取音乐Url
     sourceMusicUrl(li) {
         // 获取URL，添加cookie可以获取到无损
-        this.netease.getMusicUrl(li.getAttribute('musicID'), function (musicUrl) {
+        netease.getMusicUrl(li.getAttribute('musicID'), function (musicUrl) {
             // 设置播放器的源地址
-            this.player.setAttribute('src', musicUrl);
+            player.setAttribute('src', musicUrl);
             // 开始播放
             // 如果是刚打开程序
-            if (this.firstLoad) {
-                this.player.setAttribute("index", 0);
-                this.player.setAttribute("cover", this.mainplaylist[0].cover);
-                this.player.setAttribute("now", this.mainplaylist[0].id);
-                this.player.setAttribute("status", "pause");
-                this.updateCover(this.player.getAttribute("cover"));
+            if (_this.firstLoad) {
+                player.setAttribute("index", "0");
+                player.setAttribute("cover", _this.mainplaylist[0].cover);
+                player.setAttribute("now", _this.mainplaylist[0].id);
+                player.setAttribute("status", "pause");
+                _this.updateCover(_this.player.getAttribute("cover"));
                 //sourceMusicUrl(document.getElementById("sheetListBox").children.item(0))
-                this.firstLoad = false;
+                _this.firstLoad = false;
                 return;
             }
             //console.log("开始播放：" + musicUrl)
-            this.player.play();
+            _this.player.play();
             // 设置当前状态为《播放》
-            this.player.setAttribute('status', 'play');
+            player.setAttribute('status', 'play');
             // 绑定当前的播放音乐的ID
-            this.player.setAttribute('now', li.getAttribute('musicID'));
+            player.setAttribute('now', li.getAttribute('musicID'));
             // 绑定当前播放音乐的名称
-            this.player.setAttribute("name", li.getAttribute('name'));
+            player.setAttribute("name", li.getAttribute('name'));
+            player.title = li.getAttribute('name');
             // 绑定当前播放音乐的作者名称
-            this.player.setAttribute("author", li.getAttribute('author'));
+            player.setAttribute("author", li.getAttribute('author'));
             /**
              * // 为列表项目绑定歌曲名
                     list.children.items("i").setAttribute("name", songs[i].name)
@@ -1036,7 +1012,7 @@ class Player {
             diskCover.setAttribute("src", coverUrl);
         }
         // 设置当前封面
-        this.player.setAttribute("cover", coverUrl);
+        player.setAttribute("cover", coverUrl);
         // 设置左下角专辑图片框的源地址
         cover.setAttribute("src", coverUrl);
     }
@@ -1045,19 +1021,19 @@ class Player {
         if (id == "heart") {
             //mainplaylist_id = "heart"
             // 设置player的播放列表长度参数
-            this.player.setAttribute("count", playlist.length);
+            player.setAttribute("count", playlist.length);
             // 设置当前播放的歌单名称
-            this.player.setAttribute('sheetName', "heart");
+            player.setAttribute('sheetName', "heart");
             // 绑定当前歌单创造者
-            this.player.setAttribute("sheetCreator", "ai");
+            player.setAttribute("sheetCreator", "ai");
             // 绑定当前歌单播放数
-            this.player.setAttribute("sheetPlayCount", "0");
+            player.setAttribute("sheetPlayCount", "0");
             // 绑定当前歌单歌曲数
-            this.player.setAttribute("sheetTrackCount", playlist.length);
+            player.setAttribute("sheetTrackCount", playlist.length);
             // 绑定当前歌单简介
-            //this.player.setAttribute("sheetDescription", ((playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description))
+            //player.setAttribute("sheetDescription", ((playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description))
             // 绑定当前歌单封面
-            //this.player.setAttribute("sheetCover", playlist.coverImgUrl)
+            //player.setAttribute("sheetCover", playlist.coverImgUrl)
             // 加载歌单详情框
             //loadSheetDetialBox(0)
             // 遍历所有的歌单ID以执行一些操作
@@ -1068,26 +1044,27 @@ class Player {
                 li.classList.add("sheet-list-item");
                 li.classList.add("light-dark");
                 // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
-                li.setAttribute('index', "i");
+                li.setAttribute('index', String(i));
                 li.setAttribute('musicID', playlist[i].id);
                 // 为列表项添加点击事件
                 li.addEventListener('click', () => {
                     // 设置上次播放的歌曲ID
-                    this.player.setAttribute("last", this.player.getAttribute('now'));
-                    this.player.setAttribute("lastIndex", this.player.getAttribute("index"));
+                    player.setAttribute("last", _this.player.getAttribute('now'));
+                    player.setAttribute("lastIndex", _this.player.getAttribute("index"));
                     // 设置当前播放的index
-                    this.player.setAttribute('index', li.getAttribute('index'));
+                    player.setAttribute('index', li.getAttribute('index'));
                     // 设置当前播放的歌单名称
-                    this.player.setAttribute('sheetName', "心动模式歌单");
+                    player.setAttribute('sheetName', "心动模式歌单");
                     // 为播放器绑定播放地址，并开始播放
-                    this.sourceMusicUrl(li);
+                    _this.sourceMusicUrl(li);
                     //initMainPlaylist()
-                    this.attachPlaylist();
+                    _this.attachPlaylist();
                     // 初始化主播放列表
-                    this.initMainPlaylist(this.playList);
+                    _this.initMainPlaylist();
                 });
-                this.sheetListBox.appendChild(li);
+                _this.sheetListBox.appendChild(li);
             }
+            console.log("歌单长度：", playlist.length);
             // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
             // `${netease.server}/song/detail?ids=${ids}
             // 为所有列表项生成综合请求参数ids，通过上面的
@@ -1107,95 +1084,92 @@ class Player {
                     // 为列表项目绑定专辑名称
                     list.children.items("i").setAttribute("albumName", songs[i].al.name)
              */
-            this.bindListItemName(this.sheetListBox, ids);
+            _this.bindListItemName(_this.sheetListBox, ids);
             // 歌单界面形成☝
         }
         else {
             // 请求
-            http.get(`${netease.server}/playlist/detail?id=${id}&cookie=${netease.cookie}`, (res) => {
-                // 获取歌单列表控件
-                let sheetListBox = document.getElementById("sheetListBox");
-                res.on('data', (str) => {
-                    console.log(str);
-                    this.mainplaylist_id = id;
-                    // 这里实际上获取到一个歌单的详情，不是歌单列表哦2333
-                    let playlist = JSON.parse(str).playlist;
-                    // playlist.trackIds 为当前歌单的所有歌曲ID的列表（只包含ID）
-                    let trackIds = playlist.trackIds;
-                    // 设置player的播放列表长度参数
-                    this.player.setAttribute("count", trackIds.length);
-                    // 设置当前播放的歌单名称
-                    this.player.setAttribute('sheetName', playlist.name);
-                    // 绑定当前歌单创造者
-                    this.player.setAttribute("sheetCreator", playlist.creator.nickname);
-                    // 绑定当前歌单播放数
-                    this.player.setAttribute("sheetPlayCount", playlist.playCount);
-                    // 绑定当前歌单歌曲数
-                    this.player.setAttribute("sheetTrackCount", playlist.trackCount);
-                    // 绑定当前歌单简介
-                    this.player.setAttribute("sheetDescription", ((playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description));
-                    // 绑定当前歌单封面
-                    this.player.setAttribute("sheetCover", playlist.coverImgUrl);
-                    // 加载歌单详情框
-                    this.loadSheetDetialBox();
-                    // 遍历所有的歌单ID以执行一些操作
-                    for (let i = 0; i < trackIds.length; i++) {
-                        // 创建一条列表项，每个列表项目对应一首歌
-                        let li = document.createElement('LI');
-                        // 添加样式 背景色#303030
-                        li.classList.add("sheet-list-item");
-                        li.classList.add("light-dark");
-                        // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
-                        li.setAttribute('index', "i");
-                        li.setAttribute('musicID', trackIds[i].id);
-                        // 为列表项添加点击事件
-                        li.addEventListener('click', () => {
-                            // 设置上次播放的歌曲ID
-                            this.player.setAttribute("last", this.player.getAttribute('now'));
-                            this.player.setAttribute("lastIndex", this.player.getAttribute("index"));
-                            // 设置当前播放的index
-                            this.player.setAttribute('index', li.getAttribute('index'));
-                            // 设置当前播放的歌单名称
-                            this.player.setAttribute('sheetName', playlist.name);
-                            // 为播放器绑定播放地址，并开始播放
-                            this.sourceMusicUrl(li);
-                            //initMainPlaylist()
-                            this.attachPlaylist();
-                            // 初始化主播放列表
-                            this.initMainPlaylist(this.playList);
-                        });
-                        sheetListBox.appendChild(li);
-                    }
-                    // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
-                    // `${netease.server}/song/detail?ids=${ids}
-                    // 为所有列表项生成综合请求参数ids，通过上面的
-                    // 址可以反馈到所有列表项目音乐详情的一个数组
-                    let ids = this.generateIdsList();
-                    // 为列表项绑定额外的数据
-                    /**
-                     * // 为列表项目绑定歌曲名
-                            list.children.items("i").setAttribute("name", songs[i].name)
-        
-                            // 为列表项目绑定封面
-                            list.children.items("i").setAttribute("cover", songs[i].al.picUrl)
-        
-                            // 为列表项目绑定专辑ID
-                            list.children.items("i").setAttribute("albumId", songs[i].al.id)
-        
-                            // 为列表项目绑定专辑名称
-                            list.children.items("i").setAttribute("albumName", songs[i].al.name)
-                     */
-                    this.bindListItemName(sheetListBox, ids);
-                    // 歌单界面形成☝
-                });
+            fetch(`${netease.server}/playlist/detail?id=${id}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+                console.log(data);
+                _this.mainplaylist_id = id;
+                // 这里实际上获取到一个歌单的详情，不是歌单列表哦2333
+                let playlist = data.playlist;
+                // playlist.trackIds 为当前歌单的所有歌曲ID的列表（只包含ID）
+                let trackIds = playlist.trackIds;
+                // 设置player的播放列表长度参数
+                player.setAttribute("count", trackIds.length);
+                // 设置当前播放的歌单名称
+                player.setAttribute('sheetName', playlist.name);
+                // 绑定当前歌单创造者
+                player.setAttribute("sheetCreator", playlist.creator.nickname);
+                // 绑定当前歌单播放数
+                player.setAttribute("sheetPlayCount", playlist.playCount);
+                // 绑定当前歌单歌曲数
+                player.setAttribute("sheetTrackCount", playlist.trackCount);
+                // 绑定当前歌单简介
+                player.setAttribute("sheetDescription", ((playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description));
+                // 绑定当前歌单封面
+                player.setAttribute("sheetCover", playlist.coverImgUrl);
+                // 加载歌单详情框
+                this.loadSheetDetialBox();
+                // 遍历所有的歌单ID以执行一些操作
+                for (let i = 0; i < trackIds.length; i++) {
+                    //console.log("添加歌单项目元素")
+                    // 创建一条列表项，每个列表项目对应一首歌
+                    let li = document.createElement('LI');
+                    // 添加样式 背景色#303030
+                    li.classList.add("sheet-list-item");
+                    li.classList.add("light-dark");
+                    // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
+                    li.setAttribute('index', String(i));
+                    li.setAttribute('musicID', trackIds[i].id);
+                    // 为列表项添加点击事件
+                    li.addEventListener('click', () => {
+                        // 设置上次播放的歌曲ID
+                        player.setAttribute("last", _this.player.getAttribute('now'));
+                        player.setAttribute("lastIndex", _this.player.getAttribute("index"));
+                        // 设置当前播放的index
+                        player.setAttribute('index', li.getAttribute('index'));
+                        // 设置当前播放的歌单名称
+                        player.setAttribute('sheetName', playlist.name);
+                        // 为播放器绑定播放地址，并开始播放
+                        _this.sourceMusicUrl(li);
+                        //initMainPlaylist()
+                        _this.attachPlaylist();
+                        // 初始化主播放列表
+                        _this.initMainPlaylist();
+                    });
+                    _this.sheetListBox.appendChild(li);
+                }
+                // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
+                // `${netease.server}/song/detail?ids=${ids}
+                // 为所有列表项生成综合请求参数ids，通过上面的
+                // 址可以反馈到所有列表项目音乐详情的一个数组
+                let ids = this.generateIdsList();
+                // 为列表项绑定额外的数据
+                /**
+                 * // 为列表项目绑定歌曲名
+                        list.children.items("i").setAttribute("name", songs[i].name)
+    
+                        // 为列表项目绑定封面
+                        list.children.items("i").setAttribute("cover", songs[i].al.picUrl)
+    
+                        // 为列表项目绑定专辑ID
+                        list.children.items("i").setAttribute("albumId", songs[i].al.id)
+    
+                        // 为列表项目绑定专辑名称
+                        list.children.items("i").setAttribute("albumName", songs[i].al.name)
+                 */
+                _this.bindListItemName(_this.sheetListBox, ids);
+                // 歌单界面形成☝
             });
         }
     }
-    initMainPlaylist(list) {
-        //let list = document.getElementById("sheetListBox")
+    initMainPlaylist() {
+        let list = _this.sheetListBox;
         // 生成主播放列表（播放后切换到这个歌单）
         // 清空
-        this.mainplaylist = [];
+        _this.mainplaylist = [];
         // 加载
         for (let i = 0; i < list.children.length; i++) {
             let item = {
@@ -1206,79 +1180,72 @@ class Player {
                 "albumId": list.children[i].getAttribute("albumId"),
                 "albumName": list.children[i].getAttribute("albumName")
             };
-            this.mainplaylist.push(item);
+            _this.mainplaylist.push(item);
         }
-        if (this.firstLoad)
-            this.sourceMusicUrl(document.getElementById("sheetListBox").children.item(0));
+        if (_this.firstLoad) {
+            let li = list.children.item(0);
+            _this.sourceMusicUrl(li);
+        }
     }
     // 获取歌单列表并绑定到界面
     getSheets() {
         let id = netease.data.account.id;
-        let sheet = {};
         // 根据用户ID请求用户歌单简略信息
-        http.get(`${netease.server}/user/playlist?uid=${id}`, (res) => {
-            res.on('data', (str) => {
-                // 获取列表盒子
-                let sheetListBox = document.getElementById("sheetListBox");
-                // 解析JSON为对象
-                let data = JSON.parse(str);
-                // 请求失败
-                if (data.code != 200) {
-                    //console.log(str)
-                    return;
-                }
-                // 歌单列表
-                let sheetlist = data.playlist;
-                // 重置列表盒子内容
-                sheetListBox.innerHTML = "";
-                // 遍历所有的歌单
-                for (let i = 0; i < sheetlist.length; i++) {
-                    // 创建一个列表项目，用于显示一个歌单项目
-                    let li = document.createElement('LI');
-                    // 设置项目的样式
-                    li.classList.add("sheet-list-item");
-                    // #303030
-                    li.classList.add("light-dark");
-                    // 设置列表项目对应的序号 争议
-                    li.setAttribute('index', "i");
-                    // 旁边的图标
-                    let coverLeft = document.createElement("IMG");
-                    coverLeft.style.float = "left";
-                    coverLeft.style.width = "35px";
-                    coverLeft.style.height = "35px";
-                    coverLeft.setAttribute("src", sheetlist[i].coverImgUrl);
-                    li.appendChild(coverLeft);
-                    // 为每个歌单设置名字
-                    let p = document.createElement("P");
-                    p.innerText = sheetlist[i].name;
-                    li.appendChild(p);
-                    sheetListBox.appendChild(li);
-                    // 歌单列表项目点击事件
-                    li.addEventListener('click', (e) => {
-                        // 再次清空列表盒子的内容，用歌单的歌曲列表取代歌单列表
-                        sheetListBox.innerHTML = "";
-                        // 请求单个歌单的详情
-                        http.get(`${netease.server}/playlist/detail?id=${sheetlist[li.getAttribute('index')].id}`, (res) => {
-                            res.on('data', (chunk) => {
-                                str += chunk;
-                            });
-                            res.on('data', (str) => {
-                                // 详细播放列表信息 对象
-                                let playlist = JSON.parse(str).playlist;
-                                // 歌单内所有歌曲ID的数组 争议
-                                let trackIds = playlist.trackIds;
-                                // 加载歌单详情框
-                                this.loadSheetDetialBox();
-                                // 获取歌单
-                                this.getSheet(sheetlist[li.getAttribute('index')].id);
-                                // 设置当前播放的歌单为点击的歌单
-                                this.player.setAttribute("sheet", sheetlist[li.getAttribute('index')].id);
-                            });
-                        });
+        fetch(`${netease.server}/user/playlist?uid=${id}`).then(res => res.json()).then(data => {
+            // 获取列表盒子
+            // 解析JSON为对象
+            // 请求失败
+            if (data.code != 200) {
+                console.log('not 200');
+                return;
+            }
+            console.log(data);
+            // 歌单列表
+            let sheetlist = data.playlist;
+            // 重置列表盒子内容
+            _this.sheetListBox.innerHTML = "";
+            // 遍历所有的歌单
+            for (let i = 0; i < sheetlist.length; i++) {
+                // 创建一个列表项目，用于显示一个歌单项目
+                let li = document.createElement('LI');
+                // 设置项目的样式
+                li.classList.add("sheet-list-item");
+                // #303030
+                li.classList.add("light-dark");
+                // 设置列表项目对应的序号 争议
+                li.setAttribute('index', String(i));
+                // 旁边的图标
+                let coverLeft = document.createElement("IMG");
+                coverLeft.style.float = "left";
+                coverLeft.style.width = "35px";
+                coverLeft.style.height = "35px";
+                coverLeft.setAttribute("src", sheetlist[i].coverImgUrl);
+                li.appendChild(coverLeft);
+                // 为每个歌单设置名字
+                let p = document.createElement("P");
+                p.innerText = sheetlist[i].name;
+                li.appendChild(p);
+                // 歌单列表项目点击事件
+                li.addEventListener('click', (e) => {
+                    // 再次清空列表盒子的内容，用歌单的歌曲列表取代歌单列表
+                    _this.sheetListBox.innerHTML = "";
+                    // 请求单个歌单的详情
+                    fetch(`${netease.server}/playlist/detail?id=${sheetlist[li.getAttribute('index')].id}`).then(res => res.json()).then(data => {
+                        // 详细播放列表信息 对象
+                        let playlist = data.playlist;
+                        // 歌单内所有歌曲ID的数组 争议
+                        let trackIds = playlist.trackIds;
+                        // 加载歌单详情框
+                        this.loadSheetDetialBox();
+                        // 获取歌单
+                        _this.getSheet(sheetlist[li.getAttribute('index')].id, playlist);
+                        // 设置当前播放的歌单为点击的歌单
+                        player.setAttribute("sheet", sheetlist[li.getAttribute('index')].id);
                     });
-                }
-                // 形成歌单列表界面☝
-            });
+                });
+                _this.sheetListBox.appendChild(li);
+            }
+            // 形成歌单列表界面☝
         });
     }
     // 为歌单详情框填充内容
@@ -1287,23 +1254,23 @@ class Player {
         // 歌单详情介绍
         let sheetDetialBoxImg = document.getElementById("sheetDetialBoxImg");
         let sheetDetialContent = document.getElementsByClassName("sheet-detail-content")[0];
-        let imgUrl = this.player.getAttribute("sheetCover");
+        let imgUrl = _this.player.getAttribute("sheetCover");
         sheetDetialBoxImg.setAttribute("src", imgUrl);
         // 名称
         let nameBox = document.createElement("DIV");
-        nameBox.innerText = "歌单名：" + this.player.getAttribute("sheetName");
+        nameBox.innerText = "歌单名：" + _this.player.getAttribute("sheetName");
         // 创造者
         let creatorBox = document.createElement("DIV");
-        creatorBox.innerText = "创建者：" + this.player.getAttribute("sheetCreator");
+        creatorBox.innerText = "创建者：" + _this.player.getAttribute("sheetCreator");
         // 播放数
         let playNumBox = document.createElement("DIV");
-        playNumBox.innerText = "播放数：" + this.player.getAttribute("sheetPlayCount");
+        playNumBox.innerText = "播放数：" + _this.player.getAttribute("sheetPlayCount");
         // 歌曲数
         let trackCountBox = document.createElement("DIV");
-        trackCountBox.innerText = "歌曲数：" + this.player.getAttribute("sheetTrackCount");
+        trackCountBox.innerText = "歌曲数：" + _this.player.getAttribute("sheetTrackCount");
         // 简介
         let descripBox = document.createElement("DIV");
-        descripBox.innerText = "简介：" + this.player.getAttribute("sheetDescription");
+        descripBox.innerText = "简介：" + _this.player.getAttribute("sheetDescription");
         sheetDetialContent.innerHTML = "";
         sheetDetialContent.appendChild(nameBox);
         sheetDetialContent.appendChild(creatorBox);
@@ -1313,81 +1280,75 @@ class Player {
     }
     // 加载每日推荐歌单
     loadDailyRecommandedSongs() {
-        http.get(`${netease.server}/recommend/songs?cookie=${netease.cookie}`, (res) => {
-            let sheetListBox = document.getElementById("sheetListBox");
-            res.on('data', (str) => {
-                if (res.statusCode != 200) {
-                    this.loadMusicPage();
-                    return;
-                }
-                // 创建推荐歌单数组
-                let rcms = JSON.parse(str).recommend;
-                // 清空dailySheet数组内容
-                this.mainplaylist = [];
-                // 遍历推荐歌曲
-                for (let i = 0; i < rcms.length; i++) {
-                    let authors = rcms[i].artists;
-                    let author = '';
-                    for (let i = 0; i < authors.length; i++) {
-                        if (i == authors.length - 1) {
-                            author += authors[i].name;
-                            continue;
-                        }
-                        author += authors[i].name + "/";
+        fetch(`${netease.server}/recommend/songs?cookie=${netease.cookie}`).then((res => res.json())).then(data => {
+            // 创建推荐歌单数组
+            let rcms = data.data.dailySongs;
+            console.log(rcms);
+            // 清空dailySheet数组内容
+            _this.mainplaylist = [];
+            // 遍历推荐歌曲
+            for (let i = 0; i < rcms.length; i++) {
+                let authors = rcms[i].ar;
+                let author = '';
+                for (let i = 0; i < authors.length; i++) {
+                    if (i == authors.length - 1) {
+                        author += authors[i].name;
+                        continue;
                     }
-                    //填充主播放列表
-                    this.mainplaylist.push({ "id": rcms[i].id, "name": rcms[i].name, "cover": rcms[i].album.picUrl, "author": author });
-                    // 创建列表项
-                    let li = document.createElement('LI');
-                    // 添加样式
-                    li.classList.add("sheet-list-item");
-                    li.classList.add("light-dark");
-                    // 设置列表向的序号
-                    li.setAttribute('index', "i");
-                    li.setAttribute('musicID', rcms[i].id);
-                    // 创建列表项左侧歌曲封面框
-                    let coverLeft = document.createElement("IMG");
-                    coverLeft.style.float = "left";
-                    coverLeft.style.width = "35px";
-                    coverLeft.style.height = "35px";
-                    // 为封面框添加图片源 争议
-                    // 用到了上面初始化好的dailySheet
-                    // 设置封面
-                    coverLeft.setAttribute("src", this.mainplaylist[i].cover);
-                    // 封面框右侧的歌曲名称
-                    let p = document.createElement("P");
-                    p.innerText = rcms[i].name;
-                    li.appendChild(coverLeft);
-                    li.appendChild(p);
-                    // 列表项的点击事件，初始化一些东西然后开始播放
-                    li.addEventListener('click', () => {
-                        // 播放器绑定上次播放的歌曲ID
-                        this.player.setAttribute("last", this.player.getAttribute('now'));
-                        this.player.setAttribute("lastIndex", this.player.getAttribute("index"));
-                        // 播放器绑定当前播放的index
-                        this.player.setAttribute('index', li.getAttribute('index'));
-                        this.player.setAttribute("now", this.mainplaylist[li.getAttribute('index')].id);
-                        // 播放器绑定当前播放音乐的封面
-                        this.player.setAttribute("cover", this.mainplaylist[li.getAttribute('index')].cover);
-                        // 获取播放地址
-                        this.netease.getMusicUrl(this.player.getAttribute("now"), function (musicUrl) {
-                            // 为播放器添加播放源
-                            this.player.setAttribute('src', musicUrl);
-                            this.firstLoad = false;
-                            // 开始播放
-                            this.player.play();
-                            //document.getElementById("musicTitle").innerText = "正在播放："+[this.player.getAttribute("index")].name
-                            this.player.setAttribute('status', 'play');
-                        });
-                    });
-                    // 填充列表
-                    sheetListBox.appendChild(li);
+                    author += authors[i].name + "/";
                 }
-                // 设置当前歌单的名字，会显示在实时歌单和歌单详情里
-                this.player.setAttribute("sheetName", "每日推荐");
-                // 刷新实时歌单
-                this.attachPlaylist();
-            });
+                //填充主播放列表
+                _this.mainplaylist.push({ "id": rcms[i].id, "name": rcms[i].name, "cover": rcms[i].al.picUrl, "author": author });
+                // 创建列表项
+                let li = document.createElement('LI');
+                // 添加样式
+                li.classList.add("sheet-list-item");
+                li.classList.add("light-dark");
+                // 设置列表向的序号
+                li.setAttribute('index', String(i));
+                li.setAttribute('musicID', rcms[i].id);
+                // 创建列表项左侧歌曲封面框
+                let coverLeft = document.createElement("IMG");
+                coverLeft.style.float = "left";
+                coverLeft.style.width = "35px";
+                coverLeft.style.height = "35px";
+                // 为封面框添加图片源 争议
+                // 用到了上面初始化好的dailySheet
+                // 设置封面
+                coverLeft.setAttribute("src", _this.mainplaylist[i].cover);
+                // 封面框右侧的歌曲名称
+                let p = document.createElement("P");
+                p.innerText = rcms[i].name;
+                li.appendChild(coverLeft);
+                li.appendChild(p);
+                // 列表项的点击事件，初始化一些东西然后开始播放
+                li.addEventListener('click', () => {
+                    // 播放器绑定上次播放的歌曲ID
+                    player.setAttribute("last", _this.player.getAttribute('now'));
+                    player.setAttribute("lastIndex", _this.player.getAttribute("index"));
+                    // 播放器绑定当前播放的index
+                    player.setAttribute('index', li.getAttribute('index'));
+                    player.setAttribute("now", _this.mainplaylist[li.getAttribute('index')].id);
+                    // 播放器绑定当前播放音乐的封面
+                    player.setAttribute("cover", _this.mainplaylist[li.getAttribute('index')].cover);
+                    // 获取播放地址
+                    _this.netease.getMusicUrl(_this.player.getAttribute("now"), function (musicUrl) {
+                        // 为播放器添加播放源
+                        player.setAttribute('src', musicUrl);
+                        _this.firstLoad = false;
+                        // 开始播放
+                        _this.player.play();
+                        //document.getElementById("musicTitle").innerText = "正在播放："+[_this.player.getAttribute("index")].name
+                        player.setAttribute('status', 'play');
+                    });
+                });
+                // 填充列表
+                _this.sheetListBox.appendChild(li);
+            }
+            // 设置当前歌单的名字，会显示在实时歌单和歌单详情里
+            player.setAttribute("sheetName", "每日推荐");
+            // 刷新实时歌单
+            _this.attachPlaylist();
         });
     }
     // 加载私人定制FM
@@ -1396,12 +1357,13 @@ class Player {
         readFile(path.join(__dirname, "../pages/music.html"), (err, data) => {
             // 右侧主容器初始化
             document.getElementById("mainPage").innerHTML = data.toString();
+            _this.sheetListBox = document.getElementById("sheetListBox");
             // 设置当前页面为音乐详情
             document.getElementById("player").setAttribute("currentPage", "music");
             // 加载播放FM歌曲
             // 清空FM歌单列表
-            this.mainplaylist = [];
-            var netease = this.netease;
+            _this.mainplaylist = [];
+            var netease = _this.netease;
             netease.getFMList(function (fms) {
                 // 填充主播放列表
                 for (let i = 0; i < fms.length; i++) {
@@ -1414,33 +1376,33 @@ class Player {
                         }
                         author += authors[i].name + "/";
                     }
-                    this.mainplaylist.push({ "id": fms[i].id, "name": fms[i].name, "cover": fms[i].album.picUrl, "author": author });
+                    _this.mainplaylist.push({ "id": fms[i].id, "name": fms[i].name, "cover": fms[i].album.picUrl, "author": author });
                 }
                 // 初始化绑定播放器当前播放序号、当前音乐ID、当前封面
-                this.player.setAttribute("index", 0);
-                this.player.setAttribute("now", fms[0].id);
-                this.player.setAttribute("cover", fms[0].album.picUrl);
+                player.setAttribute("index", "0");
+                player.setAttribute("now", fms[0].id);
+                player.setAttribute("cover", fms[0].album.picUrl);
                 // 获取播放地址
                 netease.getMusicUrl(fms[0].id, function (musicUrl) {
-                    this.firstLoad = false;
+                    _this.firstLoad = false;
                     // 为播放器设置播放源地址
-                    this.player.setAttribute('src', musicUrl);
+                    player.setAttribute('src', musicUrl);
                     // 播放器开始播放
-                    this.player.play();
+                    _this.player.play();
                     // 设置播放状态为播放
-                    this.player.setAttribute('status', 'play');
+                    player.setAttribute('status', 'play');
                     // 加载歌词
-                    this.showLyric();
+                    _this.showLyric();
                     // 更新封面
-                    this.updateCover(this.mainplaylist[0].cover);
+                    _this.updateCover(_this.mainplaylist[0].cover);
                     // 加载评论
-                    this.loadComment(1);
+                    _this.loadComment(1);
                     /// 加载喜不喜欢按钮
-                    this.loadLikeBtn();
+                    _this.loadLikeBtn();
                     //loadDislikeBtn()
-                    this.loadCollectBtn();
+                    _this.loadCollectBtn();
                     // 加载开始评论按钮
-                    this.loadAddcommentBtn();
+                    _this.loadAddcommentBtn();
                 });
             }, this.loadMusicPage);
         });
@@ -1452,161 +1414,149 @@ class Player {
             page = 1;
         }
         let musicPanelBottom = document.getElementById("musicPanelBottom");
-        //console.log("加载评论：" + `${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`)
-        http.get(`${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-            res.on('data', (str) => {
-                let hot = JSON.parse(str).hotComments;
-                let normal = JSON.parse(str).comments;
-                ////console.log(str)
-                musicPanelBottom.innerHTML = "";
-                let hotcommentList = document.createElement("UL");
-                hotcommentList.setAttribute("id", "hotcommentList");
-                let normalcommentList = document.createElement("UL");
-                normalcommentList.setAttribute("id", "normalcommentList");
-                normalcommentList.setAttribute("count", JSON.parse(str).total);
-                normalcommentList.setAttribute("page", "1");
-                normalcommentList.setAttribute("pages", String(Math.round(JSON.parse(str).total / 3)));
-                ////console.log(Math.round(JSON.parse(str).total / 3))
-                for (let i = 0; i < hot.length; i++) {
-                    let user = hot[i].user.nickname;
-                    let content = hot[i].content;
-                    let li = document.createElement("LI");
-                    //li.classList.add("comment-line")
-                    let contentDiv = document.createElement("DIV");
-                    contentDiv.innerText = content;
-                    contentDiv.classList.add("comment-line");
-                    contentDiv.classList.add("light-dark");
-                    let userP = document.createElement("DIV");
-                    userP.classList.add("comment-label-mute");
-                    userP.innerText = user;
-                    contentDiv.appendChild(userP);
-                    li.appendChild(contentDiv);
-                    hotcommentList.appendChild(li);
-                }
-                normalcommentList.innerHTML = "";
-                for (let i = 0; i < normal.length; i++) {
-                    let user = normal[i].user.nickname;
-                    let content = normal[i].content;
-                    let li = document.createElement("LI");
-                    //li.classList.add("comment-line")
-                    let contentDiv = document.createElement("DIV");
-                    contentDiv.innerText = content;
-                    contentDiv.classList.add("comment-line");
-                    contentDiv.classList.add("light-dark");
-                    let userP = document.createElement("DIV");
-                    userP.classList.add("comment-label-mute");
-                    userP.innerText = user;
-                    contentDiv.appendChild(userP);
-                    li.appendChild(contentDiv);
-                    normalcommentList.appendChild(li);
-                }
-                let hotcommentBtn = document.getElementById("hotcommentBtn");
-                let normalcommentBtn = document.getElementById("normalcommentBtn");
-                hotcommentBtn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    hotcommentList.style.display = "block";
-                    normalcommentList.style.display = "none";
-                    document.getElementById("commentPageUp").style.display = "none";
-                    document.getElementById("commentPageDown").style.display = "none";
-                });
-                normalcommentBtn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    normalcommentList.style.display = "block";
-                    hotcommentList.style.display = "none";
-                    document.getElementById("commentPageUp").style.display = "block";
-                    document.getElementById("commentPageDown").style.display = "block";
-                    normalcommentList.setAttribute("page", "1");
-                });
-                let commentPageUpFunc = (e) => {
-                    e.stopPropagation();
-                    let page = Number(normalcommentList.getAttribute("page"));
-                    if (page > 1) {
-                        page = Number(page) - 1;
-                        normalcommentList.setAttribute("page", String(page));
-                        http.get(`${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-                            res.on('data', (chunk) => {
-                                str += chunk;
-                            });
-                            res.on('data', (str) => {
-                                let normal = JSON.parse(str).comments;
-                                ////console.log(str)
-                                if (normal != undefined) {
-                                    normalcommentList.innerHTML = "";
-                                    for (let i = 0; i < normal.length; i++) {
-                                        let user = normal[i].user.nickname;
-                                        let content = normal[i].content;
-                                        let li = document.createElement("LI");
-                                        //li.classList.add("comment-line")
-                                        let contentDiv = document.createElement("DIV");
-                                        contentDiv.innerText = content;
-                                        contentDiv.classList.add("comment-line");
-                                        contentDiv.classList.add("light-dark");
-                                        let userP = document.createElement("DIV");
-                                        userP.classList.add("comment-label-mute");
-                                        userP.innerText = user;
-                                        contentDiv.appendChild(userP);
-                                        li.appendChild(contentDiv);
-                                        normalcommentList.appendChild(li);
-                                        normalcommentList.scrollTop = 0;
-                                    }
-                                }
-                            });
-                        });
-                    }
-                };
-                let commentPageDownFunc = (e) => {
-                    e.stopPropagation();
-                    let page = Number(normalcommentList.getAttribute("page"));
-                    ////console.log("still")
-                    ////console.log("still+"+page)
-                    ////console.log("stillpages:"+normalcommentList.getAttribute("pages"))
-                    ////console.log("??"+(page < normalcommentList.getAttribute("pages")))
-                    if (page < Number(normalcommentList.getAttribute("pages"))) {
-                        page = Number(page) + 1;
-                        normalcommentList.setAttribute("page", String(page));
-                        ////console.log(normalcommentList.getAttribute("pages"))
-                        ////console.log(normalcommentList.getAttribute("page"))
-                        ////console.log(page)
-                        http.get(`${netease.server}/comment/music?id=${this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`, (res) => {
-                            res.on('data', (chunk) => {
-                                str += chunk;
-                            });
-                            res.on('data', (str) => {
-                                let normal = JSON.parse(str).comments;
-                                ////console.log(str)
-                                if (normal != undefined) {
-                                    normalcommentList.innerHTML = "";
-                                    for (let i = 0; i < normal.length; i++) {
-                                        let user = normal[i].user.nickname;
-                                        let content = normal[i].content;
-                                        let li = document.createElement("LI");
-                                        //li.classList.add("comment-line")
-                                        let contentDiv = document.createElement("DIV");
-                                        contentDiv.innerText = content;
-                                        contentDiv.classList.add("comment-line");
-                                        contentDiv.classList.add("light-dark");
-                                        let userP = document.createElement("DIV");
-                                        userP.classList.add("comment-label-mute");
-                                        userP.innerText = user;
-                                        contentDiv.appendChild(userP);
-                                        li.appendChild(contentDiv);
-                                        normalcommentList.appendChild(li);
-                                        normalcommentList.scrollTop = 0;
-                                    }
-                                }
-                            });
-                        });
-                    }
-                };
-                let commentPageUp = document.getElementById("commentPageUp");
-                let commentPageDown = document.getElementById("commentPageDown");
-                commentPageUp.style.display = "none";
-                commentPageDown.style.display = "none";
-                commentPageUp.addEventListener("click", commentPageUpFunc);
-                commentPageDown.addEventListener("click", commentPageDownFunc);
-                musicPanelBottom.appendChild(hotcommentList);
-                musicPanelBottom.appendChild(normalcommentList);
+        //console.log("加载评论：" + `${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`)
+        fetch(`${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+            let hot = data.hotComments;
+            let normal = data.comments;
+            ////console.log(str)
+            musicPanelBottom.innerHTML = "";
+            let hotcommentList = document.createElement("UL");
+            hotcommentList.setAttribute("id", "hotcommentList");
+            let normalcommentList = document.createElement("UL");
+            normalcommentList.setAttribute("id", "normalcommentList");
+            normalcommentList.setAttribute("count", data.total);
+            normalcommentList.setAttribute("page", "1");
+            normalcommentList.setAttribute("pages", String(Math.round(data.total / 3)));
+            ////console.log(Math.round(JSON.parse(str).total / 3))
+            for (let i = 0; i < hot.length; i++) {
+                let user = hot[i].user.nickname;
+                let content = hot[i].content;
+                let li = document.createElement("LI");
+                //li.classList.add("comment-line")
+                let contentDiv = document.createElement("DIV");
+                contentDiv.innerText = content;
+                contentDiv.classList.add("comment-line");
+                contentDiv.classList.add("light-dark");
+                let userP = document.createElement("DIV");
+                userP.classList.add("comment-label-mute");
+                userP.innerText = user;
+                contentDiv.appendChild(userP);
+                li.appendChild(contentDiv);
+                hotcommentList.appendChild(li);
+            }
+            normalcommentList.innerHTML = "";
+            for (let i = 0; i < normal.length; i++) {
+                let user = normal[i].user.nickname;
+                let content = normal[i].content;
+                let li = document.createElement("LI");
+                //li.classList.add("comment-line")
+                let contentDiv = document.createElement("DIV");
+                contentDiv.innerText = content;
+                contentDiv.classList.add("comment-line");
+                contentDiv.classList.add("light-dark");
+                let userP = document.createElement("DIV");
+                userP.classList.add("comment-label-mute");
+                userP.innerText = user;
+                contentDiv.appendChild(userP);
+                li.appendChild(contentDiv);
+                normalcommentList.appendChild(li);
+            }
+            let hotcommentBtn = document.getElementById("hotcommentBtn");
+            let normalcommentBtn = document.getElementById("normalcommentBtn");
+            hotcommentBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                hotcommentList.style.display = "block";
+                normalcommentList.style.display = "none";
+                document.getElementById("commentPageUp").style.display = "none";
+                document.getElementById("commentPageDown").style.display = "none";
             });
+            normalcommentBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                normalcommentList.style.display = "block";
+                hotcommentList.style.display = "none";
+                document.getElementById("commentPageUp").style.display = "block";
+                document.getElementById("commentPageDown").style.display = "block";
+                normalcommentList.setAttribute("page", "1");
+            });
+            let commentPageUpFunc = (e) => {
+                e.stopPropagation();
+                let page = Number(normalcommentList.getAttribute("page"));
+                if (page > 1) {
+                    page = Number(page) - 1;
+                    normalcommentList.setAttribute("page", String(page));
+                    fetch(`${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+                        let normal = data.comments;
+                        ////console.log(str)
+                        if (normal != undefined) {
+                            normalcommentList.innerHTML = "";
+                            for (let i = 0; i < normal.length; i++) {
+                                let user = normal[i].user.nickname;
+                                let content = normal[i].content;
+                                let li = document.createElement("LI");
+                                //li.classList.add("comment-line")
+                                let contentDiv = document.createElement("DIV");
+                                contentDiv.innerText = content;
+                                contentDiv.classList.add("comment-line");
+                                contentDiv.classList.add("light-dark");
+                                let userP = document.createElement("DIV");
+                                userP.classList.add("comment-label-mute");
+                                userP.innerText = user;
+                                contentDiv.appendChild(userP);
+                                li.appendChild(contentDiv);
+                                normalcommentList.appendChild(li);
+                                normalcommentList.scrollTop = 0;
+                            }
+                        }
+                    });
+                }
+            };
+            let commentPageDownFunc = (e) => {
+                e.stopPropagation();
+                let page = Number(normalcommentList.getAttribute("page"));
+                ////console.log("still")
+                ////console.log("still+"+page)
+                ////console.log("stillpages:"+normalcommentList.getAttribute("pages"))
+                ////console.log("??"+(page < normalcommentList.getAttribute("pages")))
+                if (page < Number(normalcommentList.getAttribute("pages"))) {
+                    page = Number(page) + 1;
+                    normalcommentList.setAttribute("page", String(page));
+                    ////console.log(normalcommentList.getAttribute("pages"))
+                    ////console.log(normalcommentList.getAttribute("page"))
+                    ////console.log(page)
+                    fetch(`${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+                        let normal = data.comments;
+                        ////console.log(str)
+                        if (normal != undefined) {
+                            normalcommentList.innerHTML = "";
+                            for (let i = 0; i < normal.length; i++) {
+                                let user = normal[i].user.nickname;
+                                let content = normal[i].content;
+                                let li = document.createElement("LI");
+                                //li.classList.add("comment-line")
+                                let contentDiv = document.createElement("DIV");
+                                contentDiv.innerText = content;
+                                contentDiv.classList.add("comment-line");
+                                contentDiv.classList.add("light-dark");
+                                let userP = document.createElement("DIV");
+                                userP.classList.add("comment-label-mute");
+                                userP.innerText = user;
+                                contentDiv.appendChild(userP);
+                                li.appendChild(contentDiv);
+                                normalcommentList.appendChild(li);
+                                normalcommentList.scrollTop = 0;
+                            }
+                        }
+                    });
+                }
+            };
+            let commentPageUp = document.getElementById("commentPageUp");
+            let commentPageDown = document.getElementById("commentPageDown");
+            commentPageUp.style.display = "none";
+            commentPageDown.style.display = "none";
+            commentPageUp.addEventListener("click", commentPageUpFunc);
+            commentPageDown.addEventListener("click", commentPageDownFunc);
+            musicPanelBottom.appendChild(hotcommentList);
+            musicPanelBottom.appendChild(normalcommentList);
         });
     }
     loadLikeBtn() {
@@ -1614,21 +1564,19 @@ class Player {
         let likeBtn = document.getElementById("likeBtn");
         likeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            http.get(`${netease.server}/like?id=${this.player.getAttribute("now")}&cookie=${netease.cookie}`, (res) => {
-                res.on('data', (str) => {
+            fetch(`${netease.server}/like?id=${_this.player.getAttribute("now")}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+                //console.log(str)
+                if (data.code == 200) {
+                    new Notification("通知", {
+                        body: "喜欢歌曲成功"
+                    });
+                }
+                else {
+                    new Notification("通知", {
+                        body: "喜欢歌曲失败"
+                    });
                     //console.log(str)
-                    if (JSON.parse(str).code == 200) {
-                        new Notification("通知", {
-                            body: "喜欢歌曲成功"
-                        });
-                    }
-                    else {
-                        new Notification("通知", {
-                            body: "喜欢歌曲失败"
-                        });
-                        //console.log(str)
-                    }
-                });
+                }
             });
         });
     }
@@ -1637,14 +1585,12 @@ class Player {
         // 收藏按钮
         let collectBtn = document.getElementById("collectBtn");
         collectBtn.addEventListener("click", (e) => {
-            let mid = this.player.getAttribute("now");
-            http.get(`${netease.server}/user/playlist?uid=${netease.data.account.id}`, (res) => {
-                res.on('data', (str) => {
-                    let sheetlist = JSON.parse(str).playlist;
-                    //console.log("[url]"+`${netease.server}/user/playlist?uid=${this.data.account.id}`+"sheetlist:"+str)
-                    let req = new XMLHttpRequest();
-                    let collectDialog = dialog.newCollectDialog("collect_dialog", sheetlist, mid, netease.cookie);
-                });
+            let mid = _this.player.getAttribute("now");
+            fetch(`${netease.server}/user/playlist?uid=${netease.data.account.id}`).then(res => res.json()).then(data => {
+                let sheetlist = data.playlist;
+                //console.log("[url]"+`${netease.server}/user/playlist?uid=${this.data.account.id}`+"sheetlist:"+str)
+                let req = new XMLHttpRequest();
+                let collectDialog = dialog.newCollectDialog("collect_dialog", sheetlist, mid, netease.cookie);
             });
         });
     }
@@ -1653,20 +1599,18 @@ class Player {
         let dislikeBtn = document.getElementById("dislikeBtn");
         dislikeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            http.get(`${netease.server}/like?id=${this.player.getAttribute("now")}&like=false&cookie=${netease.cookie}`, (res) => {
-                res.on('data', (str) => {
-                    if (JSON.parse(str).code == 200) {
-                        //console.log(str)
-                        new Notification("通知", {
-                            body: "取消喜欢歌曲成功，可能需要一点点时间系统才会更新。"
-                        });
-                    }
-                    else {
-                        new Notification("通知", {
-                            body: "取消喜欢歌曲失败"
-                        });
-                    }
-                });
+            fetch(`${netease.server}/like?id=${_this.player.getAttribute("now")}&like=false&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+                if (data.code == 200) {
+                    //console.log(str)
+                    new Notification("通知", {
+                        body: "取消喜欢歌曲成功，可能需要一点点时间系统才会更新。"
+                    });
+                }
+                else {
+                    new Notification("通知", {
+                        body: "取消喜欢歌曲失败"
+                    });
+                }
             });
         });
     }
@@ -1691,19 +1635,18 @@ class Player {
             addcommentBox.appendChild(addcommentBtn);
             addcommentBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                http.get(`${netease.server}/comment?type=0&t=1&id=${this.player.getAttribute("now")}&content=${commentTextBox.value}&cookie=${netease.cookie}`, (res) => {
-                    res.on('data', (str) => {
-                        if (JSON.parse(str).code == 200) {
-                            new Notification("通知", {
-                                body: "评论发送成功"
-                            });
-                            addcommentBox.remove();
-                            this.loadComment(1);
-                        }
-                        else {
-                            //console.log(str)
-                        }
-                    });
+                var url = `${netease.server}/comment?type=0&t=1&id=${_this.player.getAttribute("now")}&content=${commentTextBox.value}&cookie=${netease.cookie}`;
+                fetch(url).then(res => res.json()).then(data => {
+                    if (data.code == 200) {
+                        new Notification("通知", {
+                            body: "评论发送成功"
+                        });
+                        addcommentBox.remove();
+                        _this.loadComment(1);
+                    }
+                    else {
+                        //console.log(str)
+                    }
                 });
             });
             document.getElementsByTagName("body")[0].appendChild(addcommentBox);
@@ -1711,110 +1654,111 @@ class Player {
         });
     }
     loadMusicPage() {
+        console.log("load music page", _this.player.getAttribute("mode"));
         // FM模式设置
-        if (this.player.getAttribute("mode") == 'fm') {
+        if (_this.player.getAttribute("mode") == 'fm') {
             this.loadFM();
         }
-        if (this.player.getAttribute("mode") == 'normal') {
+        if (_this.player.getAttribute("mode") == 'normal') {
             readFile(path.join(__dirname, "../pages/music.html"), (err, data) => {
                 document.getElementById("mainPage").innerHTML = data.toString();
+                _this.sheetListBox = document.getElementById("sheetListBox");
                 // 设置当前页面为音乐详情
                 document.getElementById("player").setAttribute("currentPage", "music");
-                ////console.log(this.player.getAttribute('index'))
-                ////console.log(this.player.getAttribute('index').cover)
+                ////console.log(_this.player.getAttribute('index'))
+                ////console.log(_this.player.getAttribute('index').cover)
                 let diskCover = document.getElementById("diskCover");
-                diskCover.setAttribute("src", this.mainplaylist[this.player.getAttribute('index')].cover);
+                diskCover.setAttribute("src", _this.mainplaylist[_this.player.getAttribute('index')].cover);
                 //加载歌词
-                this.showLyric();
+                _this.showLyric();
                 // 加载喜不喜欢按钮
-                this.loadLikeBtn();
+                _this.loadLikeBtn();
                 //loadDislikeBtn()
-                this.loadCollectBtn();
+                _this.loadCollectBtn();
                 // 加载开始评论按钮
-                this.loadAddcommentBtn();
+                _this.loadAddcommentBtn();
                 // 评论
-                this.loadComment(1);
+                _this.loadComment(1);
             });
         }
     }
     // 显示歌词
     showLyric() {
-        let lyricBox = document.getElementById("lyric");
-        this.getLryic(this.player.getAttribute('now'), lyricBox);
+        this.getLryic(_this.player.getAttribute('now'));
     }
-    getLryic(id, lyricBox) {
-        http.get(`${netease.server}/lyric?id=${id}`, (res) => {
-            res.on('data', (str) => {
-                this.currentLyric = [];
-                let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g;
-                if (JSON.parse(str).lrc != undefined) {
-                    let lyric = JSON.parse(str).lrc.lyric;
-                    ////console.log(lyric)
-                    let lines = lyric.split("\n");
-                    for (let i = 0; i < lines.length; i++) {
-                        let line = lines[i];
-                        let lineSplt = line.split(']');
-                        if (line.length < 2) {
-                            continue;
-                        }
-                        let timeBase = lineSplt[0].slice(1).split('.')[0];
-                        // 毫秒级定位
-                        // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                        let timeMinute = timeBase.split(":")[0];
-                        let timeSecond = timeBase.split(":")[1];
-                        let time = Number(timeMinute) * 60 + Number(timeSecond);
-                        let content = lineSplt[1];
-                        // 添加歌词行
-                        this.currentLyric[i] = { "time": time, "content": content };
+    getLryic(id) {
+        fetch(`${netease.server}/lyric?id=${id}`).then(res => res.json()).then(data => {
+            this.currentLyric = [];
+            let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g;
+            if (data.lrc != undefined) {
+                let lyric = data.lrc.lyric;
+                ////console.log(lyric)
+                let lines = lyric.split("\n");
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i];
+                    let lineSplt = line.split(']');
+                    if (line.length < 2) {
+                        continue;
                     }
-                    ////console.log(JSON.stringify(this.currentLyric))
-                    // 加载歌词页面
-                    readFile(path.join(__dirname, "../pages/lyric.html"), (err, data) => {
-                        let lyricBox = document.getElementById("lyric");
-                        lyricBox.innerHTML = data.toString();
-                        let lyricLines = document.getElementById("lyric-lines");
-                        for (let i = 0; i < this.currentLyric.length; i++) {
-                            ////console.log("123")
-                            let l = document.createElement("LI");
-                            //l.classList.add("menu-item")
-                            l.setAttribute('time', this.currentLyric[i].time);
-                            l.id = 'lyric-' + this.currentLyric[i].time;
-                            l.innerText = this.currentLyric[i].content;
-                            lyricLines.appendChild(l);
-                            l.addEventListener("dblclick", (() => {
-                                this.player.currentTime = Number(l.getAttribute("time"));
-                            }).bind(this));
-                        }
-                        this.lyricInterval = setInterval(() => {
-                            ////console.log(lyricBox.scrollTop)
-                            let ct = document.getElementById("player").getAttribute("time");
-                            let currentLine = document.getElementById("lyric-" + ct);
-                            if (currentLine != undefined) {
-                                for (let i = 0; i < lyricLines.children.length; i++) {
-                                    let lyricLine = lyricLines.children.item(i);
-                                    lyricLine.style.color = "ivory";
-                                }
-                                currentLine.style.color = "coral";
-                                ////console.log(currentLine.offsetTop)
-                                // 保持歌词内容显示
-                                lyricBox.scrollTop = currentLine.offsetTop - 132;
-                            }
-                        }, 200);
-                    });
-                }
-                else {
-                    readFile(path.join(__dirname, "../pages/lyric.html"), (err, data) => {
-                        let lyricBox = document.getElementById("lyric");
-                        lyricBox.innerHTML = data.toString();
-                        let lyricLines = document.getElementById("lyric-lines");
-                        let l = document.createElement("LI");
-                        l.innerText = "纯音乐，敬请聆听。";
-                        lyricLines.appendChild(l);
-                    });
+                    let timeBase = lineSplt[0].slice(1).split('.')[0];
+                    // 毫秒级定位
+                    // let timeExtra = lineSplt[0].slice(1).split('.')[1]
+                    let timeMinute = timeBase.split(":")[0];
+                    let timeSecond = timeBase.split(":")[1];
+                    let time = Number(timeMinute) * 60 + Number(timeSecond);
+                    let content = lineSplt[1];
+                    // 添加歌词行
+                    this.currentLyric[i] = { "time": time, "content": content };
                 }
                 ////console.log(JSON.stringify(this.currentLyric))
-                //lyric = lyric.replace(pattn, '')
-            });
+                // 加载歌词页面
+                readFile(path.join(__dirname, "../pages/lyric.html"), (err, data) => {
+                    let lyricBox = document.getElementById("lyric");
+                    lyricBox.innerHTML = data.toString();
+                    _this.sheetListBox = document.getElementById("sheetListBox");
+                    let lyricLines = document.getElementById("lyric-lines");
+                    for (let i = 0; i < this.currentLyric.length; i++) {
+                        ////console.log("123")
+                        let l = document.createElement("LI");
+                        //l.classList.add("menu-item")
+                        l.setAttribute('time', this.currentLyric[i].time);
+                        l.id = 'lyric-' + this.currentLyric[i].time;
+                        l.innerText = this.currentLyric[i].content;
+                        lyricLines.appendChild(l);
+                        l.addEventListener("dblclick", (() => {
+                            _this.player.currentTime = Number(l.getAttribute("time"));
+                        }).bind(this));
+                    }
+                    this.lyricInterval = setInterval(() => {
+                        ////console.log(lyricBox.scrollTop)
+                        let ct = document.getElementById("player").getAttribute("time");
+                        let currentLine = document.getElementById("lyric-" + ct);
+                        if (currentLine != undefined) {
+                            for (let i = 0; i < lyricLines.children.length; i++) {
+                                let lyricLine = lyricLines.children.item(i);
+                                lyricLine.style.color = "ivory";
+                            }
+                            currentLine.style.color = "coral";
+                            ////console.log(currentLine.offsetTop)
+                            // 保持歌词内容显示
+                            lyricBox.scrollTop = currentLine.offsetTop - 132;
+                        }
+                    }, 200);
+                });
+            }
+            else {
+                readFile(path.join(__dirname, "../pages/lyric.html"), (err, data) => {
+                    let lyricBox = document.getElementById("lyric");
+                    lyricBox.innerHTML = data.toString();
+                    _this.sheetListBox = document.getElementById("sheetListBox");
+                    let lyricLines = document.getElementById("lyric-lines");
+                    let l = document.createElement("LI");
+                    l.innerText = "纯音乐，敬请聆听。";
+                    lyricLines.appendChild(l);
+                });
+            }
+            ////console.log(JSON.stringify(this.currentLyric))
+            //lyric = lyric.replace(pattn, '')
         });
     }
 }

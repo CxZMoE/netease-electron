@@ -1,5 +1,5 @@
 
-import { remote } from 'electron';
+import * as remote from '@electron/remote';
 const { readFile } = remote.require('fs');
 const path = remote.require('path');
 import { server } from './netease';
@@ -226,7 +226,7 @@ class Dialog {
                     if (req.status == 200 && req.readyState == 4) {
                         let data = req.responseText
                         //console.log(data)
-                        let status = JSON.parse(data).code
+                        let status = JSON.parse(data).status
                         if (status == 200) {
                             new Notification("通知", {
                                 body: "收藏歌曲成功"
