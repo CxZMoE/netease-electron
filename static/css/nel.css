@@ -7,7 +7,7 @@
         margin: 0;
         color: ivory;
         background-color: #1e1e1e;
-        font-family: monospace,微软雅黑;
+        font-family: monospace, 微软雅黑;
         /*font-weight: bolder;*/
         border-radius: 5px;
         border: 0px solid #1e1e1e;
@@ -18,7 +18,8 @@
         margin: 0px;
     }
 
-    ul, li {
+    ul,
+    li {
         padding: 0px;
         margin: 0px;
         list-style-type: none;
@@ -115,7 +116,7 @@
         overflow-y: scroll;
     }
 
-    
+
     .sheet-list-item {
         height: 35px;
         margin: 6px 6px;
@@ -126,12 +127,12 @@
         border-radius: 5px;
     }
 
-    .sheet-list-item>img{
+    .sheet-list-item>img {
         border-radius: 5px;
     }
 
     .sheet-list-item>p {
-        
+
         padding-left: 55px;
     }
 
@@ -159,7 +160,7 @@
         box-shadow: 0 1px 3px 0px #303030;
     }
 
-    .menu>img{
+    .menu>img {
         height: 35px;
         width: 35px;
         margin-left: 10px;
@@ -171,12 +172,15 @@
     }
 
     .playbar {
+        display: flex;
         width: 100%;
         height: 50px;
         position: absolute;
         bottom: 0px;
         line-height: 50px;
         user-select: none;
+        justify-content: center;
+        align-items: center;
     }
 
     .menu-item {
@@ -192,7 +196,7 @@
         border: 2px solid #303030;
         background-color: #2d2d2d;
         border-radius: 5px;
-        margin-left:10px;
+        margin-left: 10px;
         height: 30px;
         line-height: 30px;
         text-align: center;
@@ -200,7 +204,8 @@
         background-image: url(../pics/drag-background.png);
         background-repeat: round;
     }
-    .menu-drag-item:hover{
+
+    .menu-drag-item:hover {
         color: ivory;
     }
 
@@ -295,6 +300,7 @@
         from {
             transform: rotate(0deg)
         }
+
         to {
             transform: rotate(360deg);
         }
@@ -426,6 +432,7 @@
         float: right;
     }
 
+
     /* Comment Buttons */
 
     .comment-button {
@@ -546,7 +553,7 @@
         border-radius: 5px;
     }
 
-    .playlist-box::-webkit-scrollbar{
+    .playlist-box::-webkit-scrollbar {
         width: 0;
     }
 
@@ -601,11 +608,12 @@
         overflow-x: hidden;
     }
 
-    #heart{
+    #heart {
         border-radius: 5px;
         transition: background-color ease-in-out 0.2s;
     }
-    #heart:hover{
+
+    #heart:hover {
         cursor: pointer;
         background-color: #3d3d3d;
     }

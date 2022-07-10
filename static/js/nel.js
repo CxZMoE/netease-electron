@@ -9,9 +9,9 @@ const http = remote.require('http');
 const log_1 = require("./log"); // 调试用
 const netease_1 = require("./netease");
 const dialog_1 = require("./dialog");
-var netease;
-var player;
-var _this;
+var netease; // Netease APIs
+var player; // [全局][元素]播放器
+var _this; // [全局][Class]Player
 // 全局常量
 exports.USR_CONFIG_DIR = remote.app.getPath("home") + "/.moe.cxz.netease-electron";
 var dialog = new dialog_1.default();
@@ -1688,7 +1688,7 @@ class Player {
     }
     getLryic(id) {
         fetch(`${netease.server}/lyric?id=${id}`).then(res => res.json()).then(data => {
-            this.currentLyric = [];
+            this.currentLyric = new Array();
             let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g;
             if (data.lrc != undefined) {
                 let lyric = data.lrc.lyric;

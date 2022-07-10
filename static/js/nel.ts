@@ -7,9 +7,9 @@ import log from './log'; // 调试用
 import Netease from './netease';
 import Dialog from "./dialog";
 
-var netease: Netease;
-var player: HTMLAudioElement;
-var _this: Player
+var netease: Netease;           // Netease APIs
+var player: HTMLAudioElement;   // [全局][元素]播放器
+var _this: Player               // [全局][Class]Player
 // 全局常量
 export const USR_CONFIG_DIR = remote.app.getPath("home") + "/.moe.cxz.netease-electron";
 var dialog = new Dialog();
@@ -29,12 +29,13 @@ function CheckConfigDir() {
 }
 
 export class Player {
-    player: HTMLAudioElement; // 播放器 <audio/>
-    playList: HTMLUListElement;
-    sheetListBox: HTMLUListElement;
-    isMoveProgress: Boolean;   // 播放进度条正在移动
+    player: HTMLAudioElement;       // [元素]播放器 <audio/>
+    playList: HTMLUListElement;     // [元素]当前播放列表
+    sheetListBox: HTMLUListElement; // [元素]歌单列表
+
+    isMoveProgress: Boolean;        // 播放进度条正在移动
     playMode: String;
-    currentLyric: any[];
+    currentLyric: Array<any>;
     lyricInterval: any;
     mainplaylist: any[];
     mainplaylist_id: String;
@@ -533,7 +534,7 @@ export class Player {
                 let musicLength = Number(_this.player.getAttribute('length'))
 
                 // 更新当前时间
-                
+
                 ctlabel.innerText = Number(player.currentTime / 60).toFixed(0) + ":" + (Number(player.currentTime % 60).toFixed(0))
 
                 // 更新总时长
@@ -1183,7 +1184,7 @@ export class Player {
             player.title = li.getAttribute('name');
             // 绑定当前播放音乐的作者名称
             player.setAttribute("author", li.getAttribute('author'))
-            
+
             /**
              * // 为列表项目绑定歌曲名
                     list.children.items("i").setAttribute("name", songs[i].name)
@@ -1488,7 +1489,7 @@ export class Player {
                 let p = document.createElement("P")
                 p.innerText = sheetlist[i].name
                 li.appendChild(p)
-                
+
 
                 // 歌单列表项目点击事件
                 li.addEventListener('click', (e) => {
@@ -2047,7 +2048,7 @@ export class Player {
 
     getLryic(id: string) {
         fetch(`${netease.server}/lyric?id=${id}`).then(res => res.json()).then(data => {
-            this.currentLyric = []
+            this.currentLyric = new Array<any>();
             let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
             if (data.lrc != undefined) {
                 let lyric = data.lrc.lyric

@@ -9,13 +9,13 @@ require('@electron/remote/main').initialize()
 
 // 启动api
 
-// var neteaseApi = process.exec("set PORT=19696 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
-//     console.log(stdout)
-//     if (err){
-//         console.log(err)
-//         return
-//     }
-// })
+var neteaseApi = process.exec("set PORT=3000 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
+    console.log(stdout)
+    if (err){
+        console.log(err)
+        return
+    }
+})
 
 let win = null
 function createWindow(title, width, height) {
@@ -23,7 +23,7 @@ function createWindow(title, width, height) {
         title: title,
         width: width,
         height: height,
-        resizable: false,
+        resizable: true,
         maximizable: true,
         center: true,
         hasShadow:true,
@@ -33,7 +33,8 @@ function createWindow(title, width, height) {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: true,
-            worldSafeExecuteJavaScript: false
+            worldSafeExecuteJavaScript: false,
+            devTools: true
             
         },
         icon: __dirname + "/static/pics/BILIBILI.png"
@@ -41,7 +42,7 @@ function createWindow(title, width, height) {
     })
     require("@electron/remote/main").enable(win.webContents);
     win.setMenu(null)
-    //win.webContents.openDevTools()
+    win.webContents.openDevTools()
     win.loadFile(__dirname +"/static/pages/index.html")
 }
 let tray = null
