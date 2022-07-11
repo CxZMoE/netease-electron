@@ -23,7 +23,7 @@ function createWindow(title, width, height) {
         title: title,
         width: width,
         height: height,
-        resizable: false,
+        resizable: true,
         maximizable: true,
         center: true,
         hasShadow:true,
@@ -41,7 +41,7 @@ function createWindow(title, width, height) {
     })
     require("@electron/remote/main").enable(win.webContents);
     win.setMenu(null)
-    //win.webContents.openDevTools()
+    win.webContents.openDevTools()
     win.loadFile(__dirname +"/static/pages/index.html")
 }
 let tray = null

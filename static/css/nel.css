@@ -11,6 +11,7 @@
         /*font-weight: bolder;*/
         border-radius: 5px;
         border: 0px solid #1e1e1e;
+        overflow: hidden;
     }
 
     p {
@@ -87,14 +88,19 @@
     /* Vertical*/
 
     .list-box {
-        width: 170px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        width: 100%;
         /* self */
         margin-top: 10px;
+        overflow: hidden;
+        overflow-y: scroll;
     }
 
     .list-item {
-        width: 150px;
-        height: 35px;
+        /* width: 150px;
+        height: 35px; */
         margin: 6px 6px 6px 15px;
         line-height: 35px;
         text-align: center;
