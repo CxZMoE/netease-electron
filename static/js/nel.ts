@@ -6,10 +6,12 @@ const http = remote.require('http');
 import log from './log'; // 调试用
 import Netease from './netease';
 import Dialog from "./dialog";
+import { SheetDetial } from './data';
 
-var netease: Netease;           // Netease APIs
-var player: HTMLAudioElement;   // [全局][元素]播放器
-var _this: Player               // [全局][Class]Player
+export var netease: Netease;
+var player: HTMLAudioElement;
+var _this: Player
+
 // 全局常量
 export const USR_CONFIG_DIR = remote.app.getPath("home") + "/.moe.cxz.netease-electron";
 var dialog = new Dialog();
@@ -17,7 +19,7 @@ var dialog = new Dialog();
 
 // 用户目录
 function CheckConfigDir() {
-    let exists: Boolean = fs.existsSync(USR_CONFIG_DIR);
+    let exists: boolean = fs.existsSync(USR_CONFIG_DIR);
     if (!exists) {
         log.LogE("用户配置文件未找到");
         fs.mkdir(USR_CONFIG_DIR, { mode: "0755", recursive: true },
@@ -29,19 +31,20 @@ function CheckConfigDir() {
 }
 
 export class Player {
-    player: HTMLAudioElement;       // [元素]播放器 <audio/>
-    playList: HTMLUListElement;     // [元素]当前播放列表
-    sheetListBox: HTMLUListElement; // [元素]歌单列表
-
-    isMoveProgress: Boolean;        // 播放进度条正在移动
-    playMode: String;
-    currentLyric: Array<any>;
+    player: HTMLAudioElement; // 播放器 <audio/>
+    playList: HTMLUListElement;
+    sheetListBox: HTMLUListElement;
+    isMoveProgress: boolean;   // 播放进度条正在移动
+    playMode: string;
+    currentLyric: any[];
     lyricInterval: any;
     mainplaylist: any[];
-    mainplaylist_id: String;
-    firstLoad: Boolean;
+    mainplaylist_id: string;
+    firstLoad: boolean;
 
     netease: Netease;
+    currentSheet: SheetDetial;
+    currentOffset: number;
     constructor() {
         // 状态变量
         this.playMode = 'list-loop';
@@ -58,6 +61,7 @@ export class Player {
         // 初始化网易服务
         netease = new Netease(this.player);
         this.netease = netease;
+        this.currentOffset = 0;
 
         _this = this;
     }
@@ -179,6 +183,8 @@ export class Player {
         // 事先加载搜索页面
         readFile(path.join(__dirname, "../pages/search.html"), (err, data) => {
             let body = document.getElementsByTagName("body")[0];
+
+            // 创建搜索框结点
             let searchBox = <HTMLDivElement>document.createElement("DIV");
             // <div id="searchBox" class="search-box">
             searchBox.setAttribute("id", "searchBox");
@@ -443,7 +449,6 @@ export class Player {
 
     // 初始化侧边栏事件
     initSidebar() {
-        var player = this;
         // 歌单按钮点击
         var sheetBtn = document.getElementById("sheetBtn")
         sheetBtn.addEventListener("click", function (e) {
@@ -451,9 +456,9 @@ export class Player {
             readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                 (<HTMLElement>document.getElementById("mainPage")).innerHTML = data.toString()
                 _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
-                player.player.setAttribute("currentPage", "home")
-                player.player.setAttribute("mode", "normal")
-                player.getSheets()
+                player.setAttribute("currentPage", "home")
+                player.setAttribute("mode", "normal")
+                _this.getSheets()
             })
         })
 
@@ -464,9 +469,9 @@ export class Player {
             readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                 (<HTMLElement>document.getElementById("mainPage")).innerHTML = data.toString()
                 _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
-                document.getElementById("player").setAttribute("currentPage", "home")
-                player.player.setAttribute("mode", "normal")
-                player.getFav()
+                player.setAttribute("currentPage", "home")
+                player.setAttribute("mode", "normal")
+                _this.getFav()
             })
         })
 
@@ -474,9 +479,9 @@ export class Player {
         var fmBtn = document.getElementById("fmBtn")
         fmBtn.addEventListener("click", function (e) {
             e.stopPropagation()
-            player.player.setAttribute("mode", "fm")
+            player.setAttribute("mode", "fm")
 
-            player.loadMusicPage()
+            _this.loadMusicPage()
 
         })
 
@@ -485,20 +490,20 @@ export class Player {
         heartBtn.addEventListener("click", (e) => {
             e.stopPropagation()
             // getFav()
-            player.getHeart()
+            _this.getHeart()
         })
 
         // 每日推荐被点击
         var dailyRecommendBtn = document.getElementById("dailyRecommendBtn")
         dailyRecommendBtn.addEventListener("click", function (e) {
             e.stopPropagation()
-            player.player.setAttribute("mode", "normal")
+            player.setAttribute("mode", "normal")
             readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
                 (<HTMLElement>document.getElementById("mainPage")).innerHTML = data.toString()
                 _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
-                player.loadDailyRecommandedSongs()
-                document.getElementById("player").setAttribute("currentPage", "home")
-                player.player.setAttribute("mode", "normal")
+                _this.loadDailyRecommandedSongs()
+                player.setAttribute("currentPage", "home")
+                player.setAttribute("mode", "normal")
             })
 
         })
@@ -507,7 +512,7 @@ export class Player {
     // 初始化播放器
     initPlayer() {
         // 获取播放器控件
-        var player = <HTMLAudioElement>document.getElementById("player")
+        var player = _this.player
 
         // 设置初始播放序号
         player.setAttribute('index', "0")
@@ -853,7 +858,7 @@ export class Player {
                     MainPage.innerHTML = data.toString();
                     _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
                     //console.log("load sheet:" + _this.player.getAttribute('sheet'))
-                    _this.getSheet(_this.player.getAttribute('sheet'), _this.mainplaylist)
+                    _this.getSheet(_this.player.getAttribute('sheet'))
                     player.setAttribute("currentPage", "home")
                     // 加载歌词
                     // _this.showLyric()
@@ -893,7 +898,7 @@ export class Player {
             player.setAttribute('sheetName', sheetlist[0].name);
 
             // 获取歌单歌曲列表
-            _this.getSheet(sheetlist[0].id, _this.mainplaylist);
+            _this.getSheet(sheetlist[0].id);
         })
     }
 
@@ -908,7 +913,7 @@ export class Player {
         fetch(url).then(res => res.json()).then(data => {
             //console.log("获取心跳模式歌单")
             //console.log(str)
-            let sheetlist = data.data
+            let heartSheet = data.data
             // 清空内容
             _this.sheetListBox.innerHTML = ""
 
@@ -916,9 +921,11 @@ export class Player {
             player.setAttribute("sheet", String(sheetid))
 
             // 设置当前播放的歌单名称
-            player.setAttribute('sheetName', sheetlist[0].songInfo.name)
+            player.setAttribute('sheetName', heartSheet[0].songInfo.name)
+            console.log(heartSheet)
+            _this.mainplaylist = heartSheet;
             // 获取歌单歌曲列表
-            _this.getSheet("heart", sheetlist)
+            _this.getSheet("heart")
         })
     }
 
@@ -968,166 +975,96 @@ export class Player {
     }
 
     // 绑定列表中歌曲名称
-    bindListItemName(list: HTMLUListElement, ids: String) {
-        let ids_s = ids.split(",")
-        let ids_size = ids_s.length
-        let count = 0
-        let t_count = 0
-        let limit = 500
-        if (ids_size > limit) {
-            //console.log("large sheet,split request.")
-            let steps = ids_size / limit
-            //console.log("size:"+ids_size+"limit:"+limit+"steps:"+steps)
-            //console.log("steps:"+steps)
-            for (let i = 0; i <= steps; i++) {
-                let step = i
-                let step_count = limit
-                //console.log('step_count:'+step_count)
-                if (i == steps) {
-                    step_count = ids_size - (limit * steps)
-                }
-                t_count += step_count
-                //console.log("t_count:"+t_count)
-                let new_ids = ""
-                //console.log("step_count"+step_count)
-                for (let j = 0; j < step_count; j++) {
-                    ////console.log(ids_s[j])
+    bindListItemName(offset: number, limit: number) {
+        console.log(this.currentSheet)
+        fetch(`${netease.server}/playlist/track/all?id=${this.currentSheet.sheetId}&limit=${limit}&offset=${offset}`).then(res => res.json()).then(data => {
+            //console.log(`${netease.server}/song/detail?ids=${new_ids}`)
+            ////console.log(str)
+            let songs = <any[]>data.songs
+            // 遍历所有的歌单ID以执行一些操作
+            console.log(songs)
+            for (let i = offset * limit; i < offset * limit + limit; i++) {
 
-                    if (j == step_count - 1) {
-                        new_ids = new_ids + ids_s[j] + ""
-                    } else {
-                        new_ids = new_ids + ids_s[j] + ","
-                    }
-                }
+                //console.log("添加歌单项目元素")
+                // 创建一条列表项，每个列表项目对应一首歌
+                let li = <HTMLLIElement>document.createElement('LI')
 
-                fetch(`${netease.server}/song/detail?ids=${new_ids}`).then(res => res.json()).then(data => {
-                    //console.log(`${netease.server}/song/detail?ids=${new_ids}`)
-                    ////console.log(str)
-                    let songs = <any[]>data.songs
+                // 添加样式 背景色#303030
+                li.classList.add("sheet-list-item")
+                li.classList.add("light-dark")
 
-                    if (songs == undefined) {
-                        _this.bindListItemName(list, ids)
-                        return
-                    }
-                    for (let i = 0; i < songs.length; i++) {
-                        let item_index = step * limit + i
-                        if (!list.children.item(item_index)) {
-                            break;
-                        }
-                        // 为列表项目绑定歌曲名
-                        list.children.item(item_index).setAttribute("name", songs[i].name)
-                        //console.log('['+count+']get one: '+songs[i].name)
+                // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
+                li.setAttribute('index', String(i))
+                li.setAttribute('musicID', this.currentSheet.trackIds[i].id)
 
-                        // 为列表项目绑定封面
-                        list.children.item(item_index).setAttribute("cover", songs[i].al.picUrl)
+                // 为列表项添加点击事件
+                li.addEventListener('click', () => {
 
-                        // 为列表项目绑定专辑ID
-                        list.children.item(item_index).setAttribute("albumId", songs[i].al.id)
+                    // 设置上次播放的歌曲ID
+                    player.setAttribute("last", _this.player.getAttribute('now'))
+                    player.setAttribute("lastIndex", _this.player.getAttribute("index"))
 
-                        // 为列表项目绑定专辑名称
-                        list.children.item(item_index).setAttribute("albumName", songs[i].al.name)
+                    // 设置当前播放的index
+                    player.setAttribute('index', li.getAttribute('index'))
 
-                        // 为列表项目生成作者字符串
-                        let authors = songs[i].ar
-                        let author = ''
-                        for (let i = 0; i < authors.length; i++) {
-                            if (i == authors.length - 1) {
-                                author += authors[i].name
-                                continue
-                            }
-                            author += authors[i].name + "/"
-                        }
+                    // 设置当前播放的歌单名称
+                    player.setAttribute('sheetName', this.currentSheet.name)
 
-                        list.children.item(item_index).setAttribute('author', author)
-
-                        // 列表项目左侧的歌曲封面
-                        let coverLeft = document.createElement("IMG")
-                        coverLeft.style.float = "left"
-                        coverLeft.style.width = "35px"
-                        coverLeft.style.height = "35px"
-                        coverLeft.setAttribute("src", songs[i].al.picUrl)
-
-
-                        // 列表项目的歌曲名称
-                        let p = document.createElement("P")
-                        p.innerText = songs[i].name + " - " + author
-                        list.children[item_index].appendChild(coverLeft)
-                        list.children[item_index].appendChild(p)
-
-                        count++
-
-                        if (count == ids_size - 1) {
-                            // 初始化主播放列表（第一次肯定为空）
-                            if (this.firstLoad) {
-                                _this.initMainPlaylist()
-                            }
-                        }
-
-                    }
+                    // 为播放器绑定播放地址，并开始播放
+                    _this.sourceMusicUrl(li)
+                    //initMainPlaylist()
+                    _this.attachPlaylist()
+                    // 初始化主播放列表
+                    _this.initMainPlaylist()
                 })
-            }
+                
+                // 为列表项目绑定歌曲名
+                li.setAttribute("name", songs[i].name)
+                //console.log('['+count+']get one: '+songs[i].name)
 
-        } else {
-            fetch(`${netease.server}/song/detail?ids=${ids}`).then(res => res.json()).then(data => {
-                let songs = data.songs
+                // 为列表项目绑定封面
+                li.setAttribute("cover", songs[i].al.picUrl)
 
+                // 为列表项目绑定专辑ID
+                li.setAttribute("albumId", songs[i].al.id)
 
-                if (songs == undefined) {
-                    _this.bindListItemName(list, ids)
-                    return
-                }
-                for (let i = 0; i < songs.length; i++) {
+                // 为列表项目绑定专辑名称
+                li.setAttribute("albumName", songs[i].al.name)
 
-                    // 为列表项目绑定歌曲名
-                    list.children.item(i).setAttribute("name", songs[i].name)
-
-                    // 为列表项目绑定封面
-                    list.children.item(i).setAttribute("cover", songs[i].al.picUrl)
-
-                    // 为列表项目绑定专辑ID
-                    list.children.item(i).setAttribute("albumId", songs[i].al.id)
-
-                    // 为列表项目绑定专辑名称
-                    list.children.item(i).setAttribute("albumName", songs[i].al.name)
-
-                    // 为列表项目生成作者字符串
-                    let authors = songs[i].ar
-                    let author = ''
-                    for (let i = 0; i < authors.length; i++) {
-                        if (i == authors.length - 1) {
-                            author += authors[i].name
-                            continue
-                        }
-                        author += authors[i].name + "/"
+                // 为列表项目生成作者字符串
+                let authors = songs[i].ar
+                let author = ''
+                for (let i = 0; i < authors.length; i++) {
+                    if (i == authors.length - 1) {
+                        author += authors[i].name
+                        continue
                     }
-
-                    list.children.item(i).setAttribute('author', author)
-
-                    // 列表项目左侧的歌曲封面
-                    let coverLeft = document.createElement("IMG")
-                    coverLeft.style.float = "left"
-                    coverLeft.style.width = "35px"
-                    coverLeft.style.height = "35px"
-                    coverLeft.setAttribute("src", songs[i].al.picUrl)
-
-
-                    // 列表项目的歌曲名称
-                    let p = document.createElement("P")
-                    p.innerText = songs[i].name + " - " + author
-                    list.children[i].appendChild(coverLeft)
-                    list.children[i].appendChild(p)
-
-
-
-
+                    author += authors[i].name + "/"
                 }
+
+                li.setAttribute('author', author)
+
+                // 列表项目左侧的歌曲封面
+                let coverLeft = document.createElement("IMG")
+                coverLeft.style.float = "left"
+                coverLeft.style.width = "35px"
+                coverLeft.style.height = "35px"
+                coverLeft.setAttribute("src", songs[i].al.picUrl)
+
+
+                // 列表项目的歌曲名称
+                let p = document.createElement("P")
+                p.innerText = songs[i].name + " - " + author
+                li.appendChild(coverLeft)
+                li.appendChild(p)
 
                 // 初始化主播放列表（第一次肯定为空）
                 if (this.firstLoad) {
                     _this.initMainPlaylist()
                 }
-            })
-        }
+                _this.sheetListBox.appendChild(li)
+            }
+        })
 
     }
 
@@ -1210,7 +1147,7 @@ export class Player {
         let cover = document.getElementById("cover")
 
         // 如果当前的页面是Music（音乐）页面，则同时刷新唱片的图片。
-        if (document.getElementById("player").getAttribute("currentPage") == "music") {
+        if (player.getAttribute("currentPage") == "music") {
             let diskCover = document.getElementById("diskCover")
             diskCover.setAttribute("src", coverUrl)
         }
@@ -1225,16 +1162,12 @@ export class Player {
 
 
     // 输入歌单ID，获取歌单内容
-    getSheet(id: string, playlist: any) {
-
-
+    getSheet(id: string) {
+        // 心动模式
         if (id == "heart") {
             //mainplaylist_id = "heart"
-
-
-
             // 设置player的播放列表长度参数
-            player.setAttribute("count", playlist.length)
+            // player.setAttribute("count", playlist.length)
 
 
             // 设置当前播放的歌单名称
@@ -1244,7 +1177,7 @@ export class Player {
             // 绑定当前歌单播放数
             player.setAttribute("sheetPlayCount", "0")
             // 绑定当前歌单歌曲数
-            player.setAttribute("sheetTrackCount", playlist.length)
+            let count = parseInt(player.getAttribute("sheetTrackCount"));
             // 绑定当前歌单简介
             //player.setAttribute("sheetDescription", ((playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description))
             // 绑定当前歌单封面
@@ -1254,7 +1187,7 @@ export class Player {
             //loadSheetDetialBox(0)
 
             // 遍历所有的歌单ID以执行一些操作
-            for (let i = 0; i < playlist.length; i++) {
+            for (let i = 0; i < 10; i++) {
 
                 // 创建一条列表项，每个列表项目对应一首歌
                 let li = <HTMLLIElement>document.createElement('LI')
@@ -1265,7 +1198,8 @@ export class Player {
 
                 // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
                 li.setAttribute('index', String(i))
-                li.setAttribute('musicID', playlist[i].id)
+                //console.log(_this.mainplaylist)
+                li.setAttribute('musicID', _this.mainplaylist[i].id)
 
                 // 为列表项添加点击事件
                 li.addEventListener('click', () => {
@@ -1293,7 +1227,7 @@ export class Player {
 
             }
 
-            console.log("歌单长度：", playlist.length);
+            console.log("歌单长度：", _this.mainplaylist.length);
             // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
             // `${netease.server}/song/detail?ids=${ids}
 
@@ -1315,77 +1249,39 @@ export class Player {
                     // 为列表项目绑定专辑名称
                     list.children.items("i").setAttribute("albumName", songs[i].al.name)
              */
-            _this.bindListItemName(_this.sheetListBox, ids)
+            _this.bindListItemName(_this.currentOffset, 20)
 
             // 歌单界面形成☝
         } else {
-            // 请求
-            fetch(`${netease.server}/playlist/detail?id=${id}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-                console.log(data)
-                _this.mainplaylist_id = id
+            let sheet = new SheetDetial(id);
+            sheet.Update().then((data: SheetDetial) => {
+                // 请求
                 // 这里实际上获取到一个歌单的详情，不是歌单列表哦2333
-                let playlist = data.playlist
+                this.currentSheet = data;
+                console.log(sheet)
+                _this.mainplaylist_id = id
 
                 // playlist.trackIds 为当前歌单的所有歌曲ID的列表（只包含ID）
-                let trackIds = playlist.trackIds
 
                 // 设置player的播放列表长度参数
-                player.setAttribute("count", trackIds.length)
-
-
+                player.setAttribute("count", String(data.songCount))
                 // 设置当前播放的歌单名称
-                player.setAttribute('sheetName', playlist.name)
+                player.setAttribute('sheetName', data.name);
                 // 绑定当前歌单创造者
-                player.setAttribute("sheetCreator", playlist.creator.nickname)
+                player.setAttribute("sheetCreator", data.creator);
                 // 绑定当前歌单播放数
-                player.setAttribute("sheetPlayCount", playlist.playCount)
+                player.setAttribute("sheetPlayCount", String(data.playCount));
                 // 绑定当前歌单歌曲数
-                player.setAttribute("sheetTrackCount", playlist.trackCount)
+                player.setAttribute("sheetTrackCount", String(data.songCount));
                 // 绑定当前歌单简介
-                player.setAttribute("sheetDescription", ((playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description))
+                player.setAttribute("sheetDescription", ((data.description == null) ? "单主很懒，没有写简介。" : data.description))
                 // 绑定当前歌单封面
-                player.setAttribute("sheetCover", playlist.coverImgUrl)
+                player.setAttribute("sheetCover", data.coverUrl);
 
                 // 加载歌单详情框
                 this.loadSheetDetialBox()
 
-                // 遍历所有的歌单ID以执行一些操作
-                for (let i = 0; i < trackIds.length; i++) {
-                    //console.log("添加歌单项目元素")
-                    // 创建一条列表项，每个列表项目对应一首歌
-                    let li = <HTMLLIElement>document.createElement('LI')
 
-                    // 添加样式 背景色#303030
-                    li.classList.add("sheet-list-item")
-                    li.classList.add("light-dark")
-
-                    // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
-                    li.setAttribute('index', String(i))
-                    li.setAttribute('musicID', trackIds[i].id)
-
-                    // 为列表项添加点击事件
-                    li.addEventListener('click', () => {
-
-                        // 设置上次播放的歌曲ID
-                        player.setAttribute("last", _this.player.getAttribute('now'))
-                        player.setAttribute("lastIndex", _this.player.getAttribute("index"))
-
-                        // 设置当前播放的index
-                        player.setAttribute('index', li.getAttribute('index'))
-
-                        // 设置当前播放的歌单名称
-                        player.setAttribute('sheetName', playlist.name)
-
-                        // 为播放器绑定播放地址，并开始播放
-                        _this.sourceMusicUrl(li)
-                        //initMainPlaylist()
-                        _this.attachPlaylist()
-                        // 初始化主播放列表
-                        _this.initMainPlaylist()
-                    })
-                    _this.sheetListBox.appendChild(li)
-
-                }
 
 
                 // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
@@ -1399,19 +1295,34 @@ export class Player {
                 /**
                  * // 为列表项目绑定歌曲名
                         list.children.items("i").setAttribute("name", songs[i].name)
-    
+                
                         // 为列表项目绑定封面
                         list.children.items("i").setAttribute("cover", songs[i].al.picUrl)
-    
+                
                         // 为列表项目绑定专辑ID
                         list.children.items("i").setAttribute("albumId", songs[i].al.id)
-    
+                
                         // 为列表项目绑定专辑名称
                         list.children.items("i").setAttribute("albumName", songs[i].al.name)
                  */
-                _this.bindListItemName(_this.sheetListBox, ids)
+                _this.bindListItemName(_this.currentOffset, 20)
                 // 歌单界面形成☝
-            })
+                _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
+                _this.sheetListBox.onscroll = function (ev: Event) {
+                    console.log("offsetHeight", _this.sheetListBox.offsetHeight);
+                    console.log("scrollHeight", _this.sheetListBox.scrollHeight);
+                    console.log("scrollTop", _this.sheetListBox.scrollTop);
+                    console.log("offsetTop", _this.sheetListBox.offsetTop);
+                    console.log("clientHeight", _this.sheetListBox.clientHeight);
+                    console.log("offsetHeight", document.body.offsetHeight);
+                    if (_this.sheetListBox.scrollHeight == _this.sheetListBox.scrollTop + _this.sheetListBox.clientHeight) {
+                        console.log("touch")
+                        _this.currentOffset += 1;
+                        _this.bindListItemName(_this.currentOffset, 20);
+                    }
+                }
+            });
+
         }
 
     }
@@ -1497,17 +1408,17 @@ export class Player {
                     _this.sheetListBox.innerHTML = ""
 
                     // 请求单个歌单的详情
-                    fetch(`${netease.server}/playlist/detail?id=${sheetlist[li.getAttribute('index')].id}`).then(res => res.json()).then(data => {
+                    let sheet = new SheetDetial(sheetlist[li.getAttribute('index')].id);
+                    sheet.Update().then(sheet => {
                         // 详细播放列表信息 对象
-                        let playlist = data.playlist;
                         // 歌单内所有歌曲ID的数组 争议
-                        let trackIds = playlist.trackIds;
+                        let trackIds = sheet.trackIds;
                         // 加载歌单详情框
                         this.loadSheetDetialBox();
                         // 获取歌单
-                        _this.getSheet(sheetlist[li.getAttribute('index')].id, playlist);
+                        _this.getSheet(sheet.sheetId);
                         // 设置当前播放的歌单为点击的歌单
-                        player.setAttribute("sheet", sheetlist[li.getAttribute('index')].id);
+                        player.setAttribute("sheet", sheet.sheetId);
                     })
                 })
                 _this.sheetListBox.appendChild(li);
@@ -1650,18 +1561,15 @@ export class Player {
 
     // 加载私人定制FM
     loadFM() {
-
         // 读取音乐界面代码
         readFile(path.join(__dirname, "../pages/music.html"), (err, data) => {
-
             // 右侧主容器初始化
             document.getElementById("mainPage").innerHTML = data.toString()
             _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
             // 设置当前页面为音乐详情
-            document.getElementById("player").setAttribute("currentPage", "music")
+            player.setAttribute("currentPage", "music")
 
             // 加载播放FM歌曲
-
 
             // 清空FM歌单列表
             _this.mainplaylist = []
@@ -1740,7 +1648,6 @@ export class Player {
 
             let normalcommentList = document.createElement("UL")
             normalcommentList.setAttribute("id", "normalcommentList")
-
             normalcommentList.setAttribute("count", data.total)
             normalcommentList.setAttribute("page", "1")
             normalcommentList.setAttribute("pages", String(Math.round(data.total / 3)))
@@ -2019,7 +1926,7 @@ export class Player {
                 document.getElementById("mainPage").innerHTML = data.toString();
                 _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
                 // 设置当前页面为音乐详情
-                document.getElementById("player").setAttribute("currentPage", "music")
+                player.setAttribute("currentPage", "music")
                 ////console.log(_this.player.getAttribute('index'))
                 ////console.log(_this.player.getAttribute('index').cover)
                 let diskCover = document.getElementById("diskCover")
@@ -2043,92 +1950,56 @@ export class Player {
 
     // 显示歌词
     showLyric() {
-        this.getLryic(_this.player.getAttribute('now'))
-    }
-
-    getLryic(id: string) {
-        fetch(`${netease.server}/lyric?id=${id}`).then(res => res.json()).then(data => {
-            this.currentLyric = new Array<any>();
-            let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
-            if (data.lrc != undefined) {
-                let lyric = data.lrc.lyric
-                ////console.log(lyric)
-                let lines = lyric.split("\n")
-                for (let i = 0; i < lines.length; i++) {
-                    let line = lines[i]
-                    let lineSplt = line.split(']')
-                    if (line.length < 2) {
-                        continue
-                    }
-                    let timeBase = lineSplt[0].slice(1).split('.')[0]
-                    // 毫秒级定位
-                    // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                    let timeMinute = timeBase.split(":")[0]
-                    let timeSecond = timeBase.split(":")[1]
-                    let time = Number(timeMinute) * 60 + Number(timeSecond)
-                    let content = lineSplt[1]
-
-                    // 添加歌词行
-                    this.currentLyric[i] = { "time": time, "content": content }
-
-                }
-
-                ////console.log(JSON.stringify(this.currentLyric))
-                // 加载歌词页面
+        this.currentSheet.GetLyric(_this.player.getAttribute('now')).then(
+            (lyricCuts) => {
                 readFile(path.join(__dirname, "../pages/lyric.html"), (err, data) => {
                     let lyricBox = document.getElementById("lyric")
-
                     lyricBox.innerHTML = data.toString()
-                    _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
-                    let lyricLines = <HTMLUListElement>document.getElementById("lyric-lines")
-                    for (let i = 0; i < this.currentLyric.length; i++) {
-                        ////console.log("123")
-                        let l = document.createElement("LI")
-                        //l.classList.add("menu-item")
-                        l.setAttribute('time', this.currentLyric[i].time)
-                        l.id = 'lyric-' + this.currentLyric[i].time
-                        l.innerText = this.currentLyric[i].content
-                        lyricLines.appendChild(l)
-                        l.addEventListener("dblclick", (() => {
-                            _this.player.currentTime = Number(l.getAttribute("time"));
-                        }).bind(this))
-                    }
 
-                    this.lyricInterval = setInterval(() => {
-                        ////console.log(lyricBox.scrollTop)
-
-                        let ct = document.getElementById("player").getAttribute("time")
-                        let currentLine = <HTMLLIElement>document.getElementById("lyric-" + ct)
-                        if (currentLine != undefined) {
-                            for (let i = 0; i < lyricLines.children.length; i++) {
-                                let lyricLine = <HTMLLIElement>lyricLines.children.item(i)
-                                lyricLine.style.color = "ivory"
-                            }
-                            currentLine.style.color = "coral"
-                            ////console.log(currentLine.offsetTop)
-                            // 保持歌词内容显示
-                            lyricBox.scrollTop = currentLine.offsetTop - 132
+                    // 根据歌词的长度判断歌曲是轻音乐还是正常歌曲
+                    if (lyricCuts.length > 0) {
+                        _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
+                        let lyricLines = <HTMLUListElement>document.getElementById("lyric-lines")
+                        for (let i = 0; i < lyricCuts.length; i++) {
+                            ////console.log("123")
+                            let l = document.createElement("LI")
+                            //l.classList.add("menu-item")
+                            l.setAttribute('time', lyricCuts[i].time)
+                            l.id = 'lyric-' + lyricCuts[i].time
+                            l.innerText = lyricCuts[i].content
+                            lyricLines.appendChild(l)
+                            l.addEventListener("dblclick", (() => {
+                                _this.player.currentTime = Number(l.getAttribute("time"));
+                            }).bind(this))
                         }
 
+                        this.lyricInterval = setInterval(() => {
+                            ////console.log(lyricBox.scrollTop)
 
-                    }, 200);
-                })
-            } else {
-                readFile(path.join(__dirname, "../pages/lyric.html"), (err, data) => {
-                    let lyricBox = document.getElementById("lyric")
+                            let ct = player.getAttribute("time")
+                            let currentLine = <HTMLLIElement>document.getElementById("lyric-" + ct)
+                            if (currentLine != undefined) {
+                                for (let i = 0; i < lyricLines.children.length; i++) {
+                                    let lyricLine = <HTMLLIElement>lyricLines.children.item(i)
+                                    lyricLine.style.color = "ivory"
+                                }
+                                currentLine.style.color = "coral"
+                                ////console.log(currentLine.offsetTop)
+                                // 保持歌词内容显示
+                                lyricBox.scrollTop = currentLine.offsetTop - 132
+                            }
 
-                    lyricBox.innerHTML = data.toString()
-                    _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
-                    let lyricLines = document.getElementById("lyric-lines")
-                    let l = document.createElement("LI")
-                    l.innerText = "纯音乐，敬请聆听。"
-                    lyricLines.appendChild(l)
+
+                        }, 200);
+                    } else {
+                        _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
+                        let lyricLines = document.getElementById("lyric-lines")
+                        let l = document.createElement("LI")
+                        l.innerText = "纯音乐，敬请聆听。"
+                        lyricLines.appendChild(l)
+                    }
                 })
             }
-
-
-            ////console.log(JSON.stringify(this.currentLyric))
-            //lyric = lyric.replace(pattn, '')
-        })
+        )
     }
 }
