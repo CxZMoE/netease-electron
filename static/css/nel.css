@@ -3,15 +3,15 @@
     }
 
     body {
-        padding: 50px 0 0 0;
+        padding: 0;
         margin: 0;
         color: ivory;
         background-color: #1e1e1e;
         font-family: monospace, 微软雅黑;
-        /*font-weight: bolder;*/
         border-radius: 5px;
         border: 0px solid #1e1e1e;
         overflow: hidden;
+        margin-bottom: 100px;
     }
 
     p {
@@ -80,23 +80,24 @@
     /* ListView */
 
     .sidebar {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        width: 300px;
         background-color: #1e1e1e;
-        position: absolute;
-        left: 0;
-        height: calc(100% - 100px);
+        height: 100%;
+        overflow: hidden;
+        overflow-y: scroll;
     }
 
     /* Vertical*/
 
     .list-box {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
         width: 100%;
         /* self */
         margin-top: 10px;
-        overflow: hidden;
-        overflow-y: scroll;
+        
     }
 
     .list-item {
@@ -116,10 +117,9 @@
     }
 
     .sheet-list-box {
-        max-height: 465px;
-        /* self */
-        margin-top: 5px;
         overflow-y: scroll;
+        height: 100%;
+        padding-bottom: 50px;
     }
 
 
@@ -292,10 +292,16 @@
     /* Pages container */
 
     .page {
-        position: relative;
-        margin: 5px 5px 5px 175px;
+        position: fixed;
         background-color: #1e1e1e;
-        height: 490px;
+        display: flex;
+        flex-direction: row;
+        justify-content: start;
+        width: 100%;
+        max-height: 100%;
+        left: 0;
+        bottom: 50px;
+        top: 50px;
     }
 
     /* Music Page */
@@ -521,7 +527,6 @@
         /* self */
         margin: 6px;
         margin-left: 15px;
-        overflow: auto;
         text-align: center;
     }
 
@@ -567,7 +572,9 @@
         padding-top: 1px;
     }
 
-    .playlist-box>ul>li {}
+    .playlist-box>ul>li {
+        overflow: hidden;
+    }
 
     .playlist-box>ul>li>p {
         overflow-x: hidden;

@@ -29,6 +29,8 @@ function createWindow(title, width, height) {
         hasShadow:true,
         autoHideMenuBar: true,
         frame: true,
+        minWidth: 800,
+        minHeight: 600,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
