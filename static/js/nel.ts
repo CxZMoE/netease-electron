@@ -2,7 +2,6 @@ import * as remote from '@electron/remote';
 const fs = remote.require('fs');
 const { readFile } = remote.require('fs');
 const path = remote.require('path');
-const http = remote.require('http');
 import log from './log'; // 调试用
 import Netease from './netease';
 import Dialog from "./dialog";
@@ -30,12 +29,19 @@ function CheckConfigDir() {
     }
 }
 
+enum SONG_PLAYBACK_MODE{
+    MODE_LOOP = 0,   // 循环模式
+    MODE_SEQ,        // 顺序模式
+    MODE_SIG,        // 单曲循环
+    MODE_RAMDOM      // 随机模式
+};
+
 export class Player {
     player: HTMLAudioElement; // 播放器 <audio/>
     playList: HTMLUListElement;
     sheetListBox: HTMLUListElement;
-    isMoveProgress: boolean;   // 播放进度条正在移动
-    playMode: string;
+    isMoveProgress: boolean;    // 播放进度条正在移动
+    playMode: SONG_PLAYBACK_MODE;           // 播放模式
     currentLyric: any[];
     lyricInterval: any;
     mainplaylist: any[];
@@ -47,7 +53,7 @@ export class Player {
     currentOffset: number;
     constructor() {
         // 状态变量
-        this.playMode = 'list-loop';
+        this.playMode = SONG_PLAYBACK_MODE.MODE_LOOP;
         this.isMoveProgress = false;
 
         this.player = <HTMLAudioElement>document.getElementById("player");
@@ -67,7 +73,7 @@ export class Player {
     }
 
     InitDom() {
-        console.log('init dom');
+        log.LogI('初始化DOM');
         var player = _this.player;
         // 播放器播放模式设置为默认模式
         player.setAttribute("mode", "normal");
@@ -138,16 +144,16 @@ export class Player {
             let playmodeBtn = document.getElementById("playmodeBtn")
             playmodeBtn.addEventListener("click", () => {
                 switch (this.playMode) {
-                    case "list-loop":
-                        this.playMode = "single-loop"
+                    case SONG_PLAYBACK_MODE.MODE_LOOP:
+                        this.playMode = SONG_PLAYBACK_MODE.MODE_SIG;
                         playmodeBtn.setAttribute("src", "../pics/single-loop.png")
                         break
-                    case "single-loop":
-                        this.playMode = "random"
+                    case SONG_PLAYBACK_MODE.MODE_SIG:
+                        this.playMode = SONG_PLAYBACK_MODE.MODE;
                         playmodeBtn.setAttribute("src", "../pics/random.png")
                         break
-                    case "random":
-                        this.playMode = "list-loop"
+                    case SONG_PLAYBACK_MODE.MODE_SEQ:
+                        this.playMode = SONG_PLAYBACK_MODE.
                         playmodeBtn.setAttribute("src", "../pics/loop.png")
                         break
                     default:
@@ -196,16 +202,11 @@ export class Player {
             // 搜索事件
             let searchKeywords = document.getElementById("searchKeywords")
             searchKeywords.addEventListener("input", (e) => {
-                //if (e.keyCode != 13) {
-                //    ////console.log(e.keyCode)
-                //    return
-                //}
                 let target = <HTMLInputElement>e.target;
                 fetch(`${netease.server}/search?keywords=${target.value}`).then((res) => {
                     return res.json()
                 }).then((data) => {
-                    if (data == undefined) {
-                        //console.log(str)
+                    if (!data) {
                         return
                     }
 
@@ -233,8 +234,7 @@ export class Player {
                             e.stopPropagation()
                             // 获取音乐详情
                             fetch(`${netease.server}/song/detail?ids=${li.getAttribute("musicID")}`).then(res => res.json()).then(data => {
-                                if (data == undefined) {
-                                    //console.log(str)
+                                if (!data) {
                                     return
                                 }
                                 let song = data.songs[0]
@@ -254,30 +254,26 @@ export class Player {
                                 }
 
                                 // 获取音乐URL
-                                fetch(`${netease.server}/song/url?id=${li.getAttribute('musicID')}&cookie=${netease.cookie}`).then(res => res.json()).then((data) => {
-                                    if (data == undefined) {
-                                        this.getMusicDetailForLiClick(li)
-                                        return
+                                _this.currentSheet.GetSongUrl(parseInt(li.getAttribute('musicID'))).then(
+                                    musicUrl => {
+                                        let searchItem = [{ "name": li.innerText, "id": li.getAttribute('musicID'), "cover": li.getAttribute('cover'), "author": author }]
+
+                                        searchItem.push.apply(searchItem, _this.mainplaylist)
+                                        _this.mainplaylist = searchItem
+                                        searchItem = null
+
+                                        player.setAttribute('index', "0")
+                                        player.setAttribute('src', musicUrl)
+                                        player.play()
+                                        _this.updateCover(li.getAttribute("cover"))
+                                        player.setAttribute('status', 'play')
+                                        player.setAttribute('now', li.getAttribute('musicID'))
+
+                                        // 隐藏搜索框
+                                        searchBox.style.height = "0px"
+                                        searchBox.style.visibility = "hidden"
                                     }
-                                    let musicUrl = data.data[0].url
-
-                                    let searchItem = [{ "name": li.innerText, "id": li.getAttribute('musicID'), "cover": li.getAttribute('cover'), "author": author }]
-
-                                    searchItem.push.apply(searchItem, _this.mainplaylist)
-                                    _this.mainplaylist = searchItem
-                                    searchItem = null
-
-                                    player.setAttribute('index', "0")
-                                    player.setAttribute('src', musicUrl)
-                                    player.play()
-                                    _this.updateCover(li.getAttribute("cover"))
-                                    player.setAttribute('status', 'play')
-                                    player.setAttribute('now', li.getAttribute('musicID'))
-
-                                    // 隐藏搜索框
-                                    searchBox.style.height = "0px"
-                                    searchBox.style.visibility = "hidden"
-                                })
+                                )
                             })
                         })
                     }
@@ -287,7 +283,6 @@ export class Player {
 
         // 事先加载主页
         readFile(path.join(__dirname, "../pages/sheetlist.html"), (err, data) => {
-            console.log(data);
             (<HTMLDivElement>document.getElementById("content")).innerHTML = data.toString();
             player.setAttribute("currentPage", "home");
             _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
@@ -336,7 +331,6 @@ export class Player {
         // 登陆状态判定
         fs.readFile(`${USR_CONFIG_DIR}/login.json`, { encoding: "utf8" }, (err, data) => {
             if (err) {
-                //console.error(err)
                 netease.loginStatus = false
                 new Notification("通知", { body: "您还未登录，请先登录。" })
                 _this.netease.data = {}
@@ -571,7 +565,6 @@ export class Player {
             player.setAttribute('length', player.duration.toString());
 
             // 更新封面
-            // console.log(_this.mainplaylist)
             let cover = _this.mainplaylist[_this.player.getAttribute('index')].cover
             _this.updateCover(cover)
 
@@ -592,9 +585,6 @@ export class Player {
             new Notification("无法播放", {
                 body: "无法播放，可能是没有版权或者权限。"
             })
-            //console.log("无法播放，可能是没有版权或者权限。")
-            //console.log(_this.player)
-
             _this.next()
         })
         // Buttons
@@ -637,20 +627,20 @@ export class Player {
         let nextShortcut = globalShortcut.register(nextKey, () => {
             _this.next()
             if (!nextShortcut) {
-                //console.log("注册按键失败")
+                ////console\.log\("注册按键失败")
             }
         })
         let lastShortcut = globalShortcut.register(lastKey, (() => {
             _this.last()
             if (!lastShortcut) {
-                //console.log("注册按键失败")
+                ////console\.log\("注册按键失败")
             }
         }))
 
         let playPauseShortcut = globalShortcut.register(playPauseKey, () => {
             _this.play()
             if (!playPauseShortcut) {
-                //console.log("注册按键失败")
+                ////console\.log\("注册按键失败")
             }
         })
 
@@ -658,9 +648,9 @@ export class Player {
             if (_player.volume <= 0.8) {
                 _player.volume += 0.2
             }
-            //console.log("音量：" + player.volume)
+            ////console\.log\("音量：" + player.volume)
             if (!volUpKeyShortcut) {
-                //console.log("注册按键失败")
+                ////console\.log\("注册按键失败")
             }
         })
 
@@ -668,9 +658,9 @@ export class Player {
             if (_player.volume >= 0.2) {
                 _player.volume -= 0.2
             }
-            //console.log("音量：" + player.volume)
+            ////console\.log\("音量：" + player.volume)
             if (!volDownKeyShortcut) {
-                //console.log("注册按键失败")
+                ////console\.log\("注册按键失败")
             }
         })
     }
@@ -701,26 +691,6 @@ export class Player {
 
             player.currentTime = 0
             player.play()
-            // 播放列表项目数量 争议 是否需要重新获取歌曲URL
-            //let count = _this.player.getAttribute("count")
-            // 播放地址
-            /*
-            if ( count > 0) {
-                http.get(`${netease.server}/song/url?id=${[0].id}&cookie=${netease.cookie}`, (res) => {
-                    
-                    
-                    res.on('data', (str) => {
-                        let musicUrl = JSON.parse(str).data[0].url
-                        player.setAttribute('src', musicUrl)
-                        player.play()
-    
-                        player.setAttribute('status', 'play')
-                        player.setAttribute('now', [0].id)
-                        // 暂停图标
-                        playBtn.setAttribute('src', '../pics/play.png')
-                    })
-                })
-            }*/
         } else {
             player.pause()
             player.setAttribute('status', 'pause')
@@ -750,8 +720,7 @@ export class Player {
         }
 
         // 获取歌曲播放地址
-        fetch(`${netease.server}/song/url?id=${_this.mainplaylist[_this.player.getAttribute('index')].id}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-            let musicUrl = data.data[0].url
+        _this.currentSheet.GetSongUrl(_this.mainplaylist[_this.player.getAttribute('index')].id).then(musicUrl => {
             player.setAttribute('src', musicUrl)
             player.play()
 
@@ -857,26 +826,12 @@ export class Player {
                     let MainPage = <HTMLElement>document.getElementById("content");
                     MainPage.innerHTML = data.toString();
                     _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
-                    //console.log("load sheet:" + _this.player.getAttribute('sheet'))
+                    ////console\.log\("load sheet:" + _this.player.getAttribute('sheet'))
                     _this.getSheet(_this.player.getAttribute('sheet'))
                     player.setAttribute("currentPage", "home")
-                    // 加载歌词
-                    // _this.showLyric()
-                    // 更新封面
-                    // _this.updateCover(_this.mainplaylist[_this.player.getAttribute('index')].cover)
-                    // 加载评论
-                    // _this.loadComment(1)
-                    // /// 加载喜不喜欢按钮
-                    // _this.loadLikeBtn()
-                    // _this.loadCollectBtn()
-                    //loadDislikeBtn()
-                    // 加载开始评论按钮
-                    // _this.loadAddcommentBtn()
                 })
             } else {
                 this.loadMusicPage();
-                console.log("not music")
-                // _this.loadAddcommentBtn()
             }
 
         })
@@ -908,10 +863,7 @@ export class Player {
         let sheetid = _this.mainplaylist_id
         let url = `${netease.server}/playmode/intelligence/list?id=${mid}&pid=${sheetid}&cookie=${netease.cookie}`
 
-        //console.log("get heart:"+url)
         fetch(url).then(res => res.json()).then(data => {
-            //console.log("获取心跳模式歌单")
-            //console.log(str)
             let heartSheet = data.data
             // 清空内容
             _this.sheetListBox.innerHTML = ""
@@ -921,7 +873,6 @@ export class Player {
 
             // 设置当前播放的歌单名称
             player.setAttribute('sheetName', heartSheet[0].songInfo.name)
-            console.log(heartSheet)
             _this.mainplaylist = heartSheet;
             // 获取歌单歌曲列表
             _this.getSheet("heart")
@@ -931,7 +882,7 @@ export class Player {
 
     // 绑定实时当前歌单显示框
     attachPlaylist() {
-        console.log("attachPlaylist");
+        //console\.log\("attachPlaylist");
 
         // 只有在不是私人FM模式下才执行
         if (_this.player.getAttribute("mode") != "fm") {
@@ -941,7 +892,7 @@ export class Player {
             playlistSheetName.innerText = _this.player.getAttribute("sheetName")
 
             playList.innerHTML = ""
-            //console.log("attach:" + sheetListBox)
+            ////console\.log\("attach:" + sheetListBox)
             for (let i = 0; i < _this.sheetListBox.children.length; i++) {
 
                 let c = <HTMLLIElement>_this.sheetListBox.children.item(i).cloneNode(true)
@@ -975,18 +926,18 @@ export class Player {
 
     // 绑定列表中歌曲名称
     bindListItemName(offset: number, limit: number) {
-        console.log(this.currentSheet)
+        //console\.log\(this.currentSheet)
         fetch(`${netease.server}/playlist/track/all?id=${this.currentSheet.sheetId}&limit=${limit}&offset=${offset * 10}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-            //console.log(`${netease.server}/song/detail?ids=${new_ids}`)
-            ////console.log(str)
+            ////console\.log\(`${netease.server}/song/detail?ids=${new_ids}`)
+            //////console\.log\(str)
             let songs = <any[]>data.songs
             // 遍历所有的歌单ID以执行一些操作
-            console.log(songs)
+            //console\.log\(songs)
             let previous_length = _this.sheetListBox.children.length;
-            console.log(`previous: ${previous_length}`);
+            //console\.log\(`previous: ${previous_length}`);
             for (let i = offset * limit; i < offset * limit + limit && i < _this.currentSheet.songCount; i++) {
-                console.log(i);
-                //console.log("添加歌单项目元素")
+                //console\.log\(i);
+                ////console\.log\("添加歌单项目元素")
                 // 创建一条列表项，每个列表项目对应一首歌
                 let li = <HTMLLIElement>document.createElement('LI')
 
@@ -1021,10 +972,10 @@ export class Player {
 
                 // 还原坐标
                 let index = i - previous_length;
-                console.log(`index: ${index}`)
+                //console\.log\(`index: ${index}`)
                 // 为列表项目绑定歌曲名
                 li.setAttribute("name", songs[index].name)
-                //console.log('['+count+']get one: '+songs[i].name)
+                ////console\.log\('['+count+']get one: '+songs[i].name)
 
                 // 为列表项目绑定封面
                 li.setAttribute("cover", songs[index].al.picUrl)
@@ -1058,7 +1009,7 @@ export class Player {
 
                 // 列表项目的歌曲名称
                 let p = document.createElement("P")
-                p.innerText = `${i+1} ` + songs[index].name + " - " + author
+                p.innerText = `${i + 1} ` + songs[index].name + " - " + author
                 li.appendChild(coverLeft)
                 li.appendChild(p)
 
@@ -1077,10 +1028,10 @@ export class Player {
     generateIdsList() {
 
         if (_this.sheetListBox == undefined) {
-            console.log("sheetlistbox is undefined")
+            //console\.log\("sheetlistbox is undefined")
         }
         let ids = ''
-        ////console.log(sheetListBox)
+        //////console\.log\(sheetListBox)
         for (let i = 0; i < _this.sheetListBox.children.length; i++) {
             if (i == _this.sheetListBox.children.length - 1) {
                 ids += _this.sheetListBox.children[i].getAttribute('musicID')
@@ -1093,7 +1044,7 @@ export class Player {
 
     // 歌单项目点击后获取音乐Url
     sourceMusicUrl(li: HTMLLIElement) {
-        console.log("获取播放地址")
+        //console\.log\("获取播放地址")
         // 获取URL，添加cookie可以获取到无损
         netease.getMusicUrl(li.getAttribute('musicID'), function (musicUrl) {
             // 设置播放器的源地址
@@ -1113,7 +1064,7 @@ export class Player {
                 return
             }
 
-            console.log("开始播放：" + musicUrl)
+            //console\.log\("开始播放：" + musicUrl)
             _this.player.play()
             // 设置当前状态为《播放》
             player.setAttribute('status', 'play')
@@ -1147,7 +1098,7 @@ export class Player {
 
     // 更新封面方法
     updateCover(coverUrl: string) {
-        //console.log("更新封面：" + coverUrl)
+        ////console\.log\("更新封面：" + coverUrl)
         // 获取左下角专辑图片框
         let cover = document.getElementById("cover")
 
@@ -1204,7 +1155,7 @@ export class Player {
 
                 // 为列表项设置序号和对应音乐ID以方便点击时候直接调用获取到音乐Url
                 li.setAttribute('index', String(i))
-                //console.log(_this.mainplaylist)
+                ////console\.log\(_this.mainplaylist)
                 li.setAttribute('musicID', _this.mainplaylist[i].id)
 
                 // 为列表项添加点击事件
@@ -1233,7 +1184,7 @@ export class Player {
 
             }
 
-            console.log("歌单长度：", _this.mainplaylist.length);
+            //console\.log\("歌单长度：", _this.mainplaylist.length);
             // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
             // `${netease.server}/song/detail?ids=${ids}
 
@@ -1264,7 +1215,7 @@ export class Player {
                 // 请求
                 // 这里实际上获取到一个歌单的详情，不是歌单列表哦2333
                 this.currentSheet = data;
-                console.log(sheet)
+                //console\.log\(sheet)
                 _this.mainplaylist_id = id
 
 
@@ -1317,14 +1268,14 @@ export class Player {
                 // 歌单界面形成☝
                 _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
                 _this.sheetListBox.onscroll = async function (ev: Event) {
-                    // console.log("offsetHeight", _this.sheetListBox.offsetHeight);
-                    // console.log("scrollHeight", _this.sheetListBox.scrollHeight);
-                    // console.log("scrollTop", _this.sheetListBox.scrollTop);
-                    // console.log("offsetTop", _this.sheetListBox.offsetTop);
-                    // console.log("clientHeight", _this.sheetListBox.clientHeight);
-                    // console.log("offsetHeight", document.body.offsetHeight);
+                    // //console\.log\("offsetHeight", _this.sheetListBox.offsetHeight);
+                    // //console\.log\("scrollHeight", _this.sheetListBox.scrollHeight);
+                    // //console\.log\("scrollTop", _this.sheetListBox.scrollTop);
+                    // //console\.log\("offsetTop", _this.sheetListBox.offsetTop);
+                    // //console\.log\("clientHeight", _this.sheetListBox.clientHeight);
+                    // //console\.log\("offsetHeight", document.body.offsetHeight);
                     if (_this.sheetListBox.scrollHeight - 1 <= _this.sheetListBox.scrollTop + _this.sheetListBox.clientHeight) {
-                        console.log("touch")
+                        //console\.log\("touch")
                         _this.currentOffset += 1;
                         _this.sheetListBox.scrollTop = _this.sheetListBox.scrollTop - 5;
                         await _this.bindListItemName(_this.currentOffset, 10);
@@ -1355,7 +1306,7 @@ export class Player {
             _this.mainplaylist.push(item)
         }
         if (this.firstLoad) {
-            console.log(_this.mainplaylist)
+            //console\.log\(_this.mainplaylist)
             this.sourceMusicUrl(<HTMLLIElement>list.firstChild);
         }
 
@@ -1371,10 +1322,10 @@ export class Player {
             // 解析JSON为对象
             // 请求失败
             if (data.code != 200) {
-                console.log('not 200')
+                //console\.log\('not 200')
                 return
             }
-            console.log(data)
+            //console\.log\(data)
             // 歌单列表
             let sheetlist = data.playlist
 
@@ -1481,7 +1432,7 @@ export class Player {
         fetch(`${netease.server}/recommend/songs?cookie=${netease.cookie}`).then((res => res.json())).then(data => {
             // 创建推荐歌单数组
             let rcms = data.data.dailySongs
-            console.log(rcms)
+            //console\.log\(rcms)
             // 清空dailySheet数组内容
             _this.mainplaylist = []
 
@@ -1639,18 +1590,18 @@ export class Player {
     }
     // 加载评论
     loadComment(page) {
-        ////console.log("show")
+        //////console\.log\("show")
         if (page < 1) {
             page = 1
         }
 
         let musicPanelBottom = document.getElementById("musicPanelBottom")
 
-        //console.log("加载评论：" + `${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`)
+        ////console\.log\("加载评论：" + `${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`)
         fetch(`${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
             let hot = data.hotComments
             let normal = data.comments
-            ////console.log(str)
+            //////console\.log\(str)
             musicPanelBottom.innerHTML = ""
 
             let hotcommentList = document.createElement("UL")
@@ -1662,7 +1613,7 @@ export class Player {
             normalcommentList.setAttribute("page", "1")
             normalcommentList.setAttribute("pages", String(Math.round(data.total / 3)))
 
-            ////console.log(Math.round(JSON.parse(str).total / 3))
+            //////console\.log\(Math.round(JSON.parse(str).total / 3))
             for (let i = 0; i < hot.length; i++) {
                 let user = hot[i].user.nickname
                 let content = hot[i].content
@@ -1733,7 +1684,7 @@ export class Player {
                     normalcommentList.setAttribute("page", String(page))
                     fetch(`${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
                         let normal = data.comments
-                        ////console.log(str)
+                        //////console\.log\(str)
                         if (normal != undefined) {
                             normalcommentList.innerHTML = ""
                             for (let i = 0; i < normal.length; i++) {
@@ -1766,20 +1717,20 @@ export class Player {
                 e.stopPropagation()
                 let page = Number(normalcommentList.getAttribute("page"))
 
-                ////console.log("still")
-                ////console.log("still+"+page)
-                ////console.log("stillpages:"+normalcommentList.getAttribute("pages"))
-                ////console.log("??"+(page < normalcommentList.getAttribute("pages")))
+                //////console\.log\("still")
+                //////console\.log\("still+"+page)
+                //////console\.log\("stillpages:"+normalcommentList.getAttribute("pages"))
+                //////console\.log\("??"+(page < normalcommentList.getAttribute("pages")))
                 if (page < Number(normalcommentList.getAttribute("pages"))) {
 
                     page = Number(page) + 1
                     normalcommentList.setAttribute("page", String(page))
-                    ////console.log(normalcommentList.getAttribute("pages"))
-                    ////console.log(normalcommentList.getAttribute("page"))
-                    ////console.log(page)
+                    //////console\.log\(normalcommentList.getAttribute("pages"))
+                    //////console\.log\(normalcommentList.getAttribute("page"))
+                    //////console\.log\(page)
                     fetch(`${netease.server}/comment/music?id=${_this.player.getAttribute("now")}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
                         let normal = data.comments
-                        ////console.log(str)
+                        //////console\.log\(str)
                         if (normal != undefined) {
                             normalcommentList.innerHTML = ""
                             for (let i = 0; i < normal.length; i++) {
@@ -1825,7 +1776,7 @@ export class Player {
         likeBtn.addEventListener('click', (e) => {
             e.stopPropagation()
             fetch(`${netease.server}/like?id=${_this.player.getAttribute("now")}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-                //console.log(str)
+                ////console\.log\(str)
                 if (data.code == 200) {
                     new Notification("通知", {
                         body: "喜欢歌曲成功"
@@ -1834,7 +1785,7 @@ export class Player {
                     new Notification("通知", {
                         body: "喜欢歌曲失败"
                     })
-                    //console.log(str)
+                    ////console\.log\(str)
                 }
             })
         })
@@ -1849,7 +1800,7 @@ export class Player {
             let mid = _this.player.getAttribute("now")
             fetch(`${netease.server}/user/playlist?uid=${netease.data.account.id}`).then(res => res.json()).then(data => {
                 let sheetlist = data.playlist
-                //console.log("[url]"+`${netease.server}/user/playlist?uid=${this.data.account.id}`+"sheetlist:"+str)
+                ////console\.log\("[url]"+`${netease.server}/user/playlist?uid=${this.data.account.id}`+"sheetlist:"+str)
                 let req = new XMLHttpRequest()
                 let collectDialog = dialog.newCollectDialog("collect_dialog", sheetlist, mid, netease.cookie)
             })
@@ -1863,7 +1814,7 @@ export class Player {
             e.stopPropagation()
             fetch(`${netease.server}/like?id=${_this.player.getAttribute("now")}&like=false&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
                 if (data.code == 200) {
-                    //console.log(str)
+                    ////console\.log\(str)
                     new Notification("通知", {
                         body: "取消喜欢歌曲成功，可能需要一点点时间系统才会更新。"
                     })
@@ -1909,7 +1860,7 @@ export class Player {
                         addcommentBox.remove()
                         _this.loadComment(1)
                     } else {
-                        //console.log(str)
+                        ////console\.log\(str)
                     }
                 })
             })
@@ -1924,7 +1875,7 @@ export class Player {
 
     loadMusicPage() {
 
-        console.log("load music page", _this.player.getAttribute("mode"))
+        //console\.log\("load music page", _this.player.getAttribute("mode"))
         // FM模式设置
         if (_this.player.getAttribute("mode") == 'fm') {
             this.loadFM()
@@ -1937,8 +1888,8 @@ export class Player {
                 _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
                 // 设置当前页面为音乐详情
                 player.setAttribute("currentPage", "music")
-                ////console.log(_this.player.getAttribute('index'))
-                ////console.log(_this.player.getAttribute('index').cover)
+                //////console\.log\(_this.player.getAttribute('index'))
+                //////console\.log\(_this.player.getAttribute('index').cover)
                 let diskCover = document.getElementById("diskCover")
                 diskCover.setAttribute("src", _this.mainplaylist[_this.player.getAttribute('index')].cover)
 
@@ -1971,7 +1922,7 @@ export class Player {
                         _this.sheetListBox = <HTMLUListElement>document.getElementById("sheetListBox");
                         let lyricLines = <HTMLUListElement>document.getElementById("lyric-lines")
                         for (let i = 0; i < lyricCuts.length; i++) {
-                            ////console.log("123")
+                            //////console\.log\("123")
                             let l = document.createElement("LI")
                             //l.classList.add("menu-item")
                             l.setAttribute('time', lyricCuts[i].time)
@@ -1984,7 +1935,7 @@ export class Player {
                         }
 
                         this.lyricInterval = setInterval(() => {
-                            ////console.log(lyricBox.scrollTop)
+                            //////console\.log\(lyricBox.scrollTop)
 
                             let ct = player.getAttribute("time")
                             let currentLine = <HTMLLIElement>document.getElementById("lyric-" + ct)
@@ -1994,7 +1945,7 @@ export class Player {
                                     lyricLine.style.color = "ivory"
                                 }
                                 currentLine.style.color = "coral"
-                                ////console.log(currentLine.offsetTop)
+                                //////console\.log\(currentLine.offsetTop)
                                 // 保持歌词内容显示
                                 lyricBox.scrollTop = currentLine.offsetTop - 132
                             }

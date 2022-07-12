@@ -40,11 +40,11 @@ export class SheetDetial {
 
 
     // 获取歌曲播放地址
-    async GetSongUrl(trackId: Number) {
+    async GetSongUrl(trackId: number) {
         var songUrl = await fetch(`${netease.server}/song/url?id=${trackId}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
             let d = data.data
             // 定义歌曲Url变量并赋值
-            return <String>d[0].url
+            return <string>d[0].url
         })
 
         return songUrl;

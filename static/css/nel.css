@@ -97,7 +97,9 @@
         width: 100%;
         /* self */
         margin-top: 10px;
-        
+        max-height: 50%;
+        overflow: hidden;
+        overflow-y: scroll;
     }
 
     .list-item {
