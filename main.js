@@ -6,10 +6,13 @@
 const { app, BrowserWindow, Tray,Menu } = require('electron')
 const process = require('child_process')
 require('@electron/remote/main').initialize()
+try{
+    require('electron-reloader')(module)
+}catch(_){}
 
 // 启动api
 
-var neteaseApi = process.exec("set PORT=3000 && node ./NeteaseCloudMusicApi/app.js",(err,stdout)=>{
+var neteaseApi = process.exec(`set PORT=3000 && node ${__dirname}/../NeteaseCloudMusicApi/app.js`,(err,stdout)=>{
     console.log(stdout)
     if (err){
         console.log(err)
@@ -23,8 +26,8 @@ function createWindow(title, width, height) {
         title: title,
         width: width,
         height: height,
-        resizable: true,
-        maximizable: true,
+        resizable: false,
+        maximizable: false,
         center: true,
         hasShadow:true,
         autoHideMenuBar: true,
@@ -44,7 +47,7 @@ function createWindow(title, width, height) {
     })
     require("@electron/remote/main").enable(win.webContents);
     win.setMenu(null)
-    win.webContents.openDevTools()
+    // win.webContents.openDevTools()
     win.loadFile(__dirname +"/static/pages/index.html")
 }
 let tray = null
