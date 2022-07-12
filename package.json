@@ -5,7 +5,6 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "prestart": "tsc",
     "test": "electron ."
   },
   "keywords": [
@@ -14,8 +13,6 @@
   "author": "CxZMoE",
   "license": "GPL3.0",
   "devDependencies": {
-    "@electron/remote": "^2.0.8",
-    "electron": "^19.0.8",
-    "typescript": "^4.7.4"
+    "electron": "^19.0.8"
   }
 }

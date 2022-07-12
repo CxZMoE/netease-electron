@@ -5,7 +5,6 @@
 
 const { app, BrowserWindow, Tray,Menu } = require('electron')
 const process = require('child_process')
-require('@electron/remote/main').initialize()
 
 // 启动api
 
@@ -33,7 +32,7 @@ function createWindow(title, width, height) {
         minHeight: 600,
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false,
+            contextIsolation: true,
             enableRemoteModule: true,
             worldSafeExecuteJavaScript: false,
             devTools: true
@@ -42,7 +41,6 @@ function createWindow(title, width, height) {
         icon: __dirname + "/static/pics/BILIBILI.png"
 
     })
-    require("@electron/remote/main").enable(win.webContents);
     win.setMenu(null)
     win.webContents.openDevTools()
     win.loadFile(__dirname +"/static/pages/index.html")
