@@ -7,8 +7,8 @@ export class SheetDetial {
     sheetId: string;        // 歌单的ID
     name: string;           // 歌单名称
     creator: string;        // 歌单创建者
-    playCount: Number;      // 歌单播放量
-    songCount: Number;      // 歌曲的数量
+    playCount: number;      // 歌单播放量
+    songCount: number;      // 歌曲的数量
     description: string;    // 歌单的简介
     coverUrl: string        // 歌单封面的Url
 

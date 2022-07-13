@@ -46,7 +46,7 @@ function createWindow(title, width, height) {
 
     })
     require("@electron/remote/main").enable(win.webContents);
-    win.setMenu(null)
+    win.menuBarVisible = false;
     // win.webContents.openDevTools()
     win.loadFile(__dirname +"/static/pages/index.html")
 }

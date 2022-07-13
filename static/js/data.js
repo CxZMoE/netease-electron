@@ -8,75 +8,113 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SheetDetial = void 0;
-const nel_1 = require("./nel");
+var nel_1 = require("./nel");
 // 歌单详情
-class SheetDetial {
-    constructor(sheetId) {
+var SheetDetial = /** @class */ (function () {
+    function SheetDetial(sheetId) {
         this.sheetId = sheetId;
     }
     // 更新歌单数据
-    Update() {
-        return __awaiter(this, void 0, void 0, function* () {
-            // 获取数据
-            //var url = `${netease.server}/playlist/track/all?id=${this.sheetId}&limit=10&offset=1&cookie=${netease.cookie}`
-            var url = `${nel_1.netease.server}/playlist/detail?id=${this.sheetId}&cookie=${nel_1.netease.cookie}`;
-            return fetch(url).then(res => res.json()).then((data) => {
-                let playlist = data.playlist;
-                this.name = playlist.name;
-                this.creator = playlist.creator.nickname;
-                this.playCount = playlist.playCount;
-                this.songCount = playlist.trackCount;
-                this.description = (playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description;
-                this.coverUrl = playlist.coverImgUrl;
-                this.trackIds = playlist.trackIds;
-                return this;
+    SheetDetial.prototype.Update = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var url;
+            var _this = this;
+            return __generator(this, function (_a) {
+                url = "".concat(nel_1.netease.server, "/playlist/detail?id=").concat(this.sheetId, "&cookie=").concat(nel_1.netease.cookie);
+                return [2 /*return*/, fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+                        var playlist = data.playlist;
+                        _this.name = playlist.name;
+                        _this.creator = playlist.creator.nickname;
+                        _this.playCount = playlist.playCount;
+                        _this.songCount = playlist.trackCount;
+                        _this.description = (playlist.description == null) ? "单主很懒，没有写简介。" : playlist.description;
+                        _this.coverUrl = playlist.coverImgUrl;
+                        _this.trackIds = playlist.trackIds;
+                        return _this;
+                    })];
             });
         });
-    }
+    };
     // 获取歌曲播放地址
-    GetSongUrl(trackId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var songUrl = yield fetch(`${nel_1.netease.server}/song/url?id=${trackId}&cookie=${nel_1.netease.cookie}`).then(res => res.json()).then(data => {
-                let d = data.data;
-                // 定义歌曲Url变量并赋值
-                return d[0].url;
-            });
-            return songUrl;
-        });
-    }
-    // 获取歌曲歌词
-    GetLyric(musicId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return fetch(`${nel_1.netease.server}/lyric?id=${musicId}`).then(res => res.json()).then(data => {
-                let lyric_cuts = []; // 歌词换行切片
-                let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g;
-                if (data.lrc != undefined) {
-                    let lyric = data.lrc.lyric;
-                    ////console.log(lyric)
-                    let lines = lyric.split("\n");
-                    for (let i = 0; i < lines.length; i++) {
-                        let line = lines[i];
-                        let lineSplt = line.split(']');
-                        if (line.length < 2) {
-                            continue;
-                        }
-                        let timeBase = lineSplt[0].slice(1).split('.')[0];
-                        // 毫秒级定位
-                        // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                        let timeMinute = timeBase.split(":")[0];
-                        let timeSecond = timeBase.split(":")[1];
-                        let time = Number(timeMinute) * 60 + Number(timeSecond);
-                        let content = lineSplt[1];
-                        // 添加歌词行
-                        lyric_cuts[i] = { "time": time, "content": content };
-                    }
+    SheetDetial.prototype.GetSongUrl = function (trackId) {
+        return __awaiter(this, void 0, void 0, function () {
+            var songUrl;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, fetch("".concat(nel_1.netease.server, "/song/url?id=").concat(trackId, "&cookie=").concat(nel_1.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
+                            var d = data.data;
+                            // 定义歌曲Url变量并赋值
+                            return d[0].url;
+                        })];
+                    case 1:
+                        songUrl = _a.sent();
+                        return [2 /*return*/, songUrl];
                 }
-                return lyric_cuts;
             });
         });
-    }
-}
+    };
+    // 获取歌曲歌词
+    SheetDetial.prototype.GetLyric = function (musicId) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, fetch("".concat(nel_1.netease.server, "/lyric?id=").concat(musicId)).then(function (res) { return res.json(); }).then(function (data) {
+                        var lyric_cuts = []; // 歌词换行切片
+                        var pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g;
+                        if (data.lrc != undefined) {
+                            var lyric = data.lrc.lyric;
+                            ////console.log(lyric)
+                            var lines = lyric.split("\n");
+                            for (var i = 0; i < lines.length; i++) {
+                                var line = lines[i];
+                                var lineSplt = line.split(']');
+                                if (line.length < 2) {
+                                    continue;
+                                }
+                                var timeBase = lineSplt[0].slice(1).split('.')[0];
+                                // 毫秒级定位
+                                // let timeExtra = lineSplt[0].slice(1).split('.')[1]
+                                var timeMinute = timeBase.split(":")[0];
+                                var timeSecond = timeBase.split(":")[1];
+                                var time = Number(timeMinute) * 60 + Number(timeSecond);
+                                var content = lineSplt[1];
+                                // 添加歌词行
+                                lyric_cuts[i] = { "time": time, "content": content };
+                            }
+                        }
+                        return lyric_cuts;
+                    })];
+            });
+        });
+    };
+    return SheetDetial;
+}());
 exports.SheetDetial = SheetDetial;
-//# sourceMappingURL=data.js.map

@@ -1,9 +1,9 @@
 {
     "compilerOptions": {
-      "target": "ES6",
+      "target": "ES5",
       "module": "CommonJS",
       "watch": false,
-      "sourceMap": true,
+      "sourceMap": false,
       "outDir": "./static/js",
       "experimentalDecorators": true,
       "noImplicitAny": false,
