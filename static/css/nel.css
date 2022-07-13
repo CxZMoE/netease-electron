@@ -321,18 +321,21 @@
     }
 
     .play-panel {
-        margin: 45px 0 0 45px;
-        width: 254px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
         height: auto;
     }
 
     .disk {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         border-radius: 100%;
         width: 200px;
         height: 200px;
         background-color: #2d2d2d;
         text-align: center;
-        animation: rotating 14s linear infinite;
     }
 
     .disk>img {
@@ -340,6 +343,7 @@
         width: 160px;
         height: 160px;
         border-radius: 100%;
+        animation: rotating 14s linear infinite;
     }
 
     .music-control-button {
@@ -415,17 +419,36 @@
     }
 
     .music-panel-top {
-        display: inline-flex;
-        justify-content: center;
+        display: flex;
+        justify-content: space-evenly;
         align-items: center;
-        height: 299px;
+        /* height: 299px; */
+        flex: 6;
+        width: 100%;
     }
 
     .music-panel-bottom {
-        height: 140px;
+        /* height: 140px; */
+        display: flex;
+        flex: 6;
+        flex-direction: column;
+        /* align-items: flex-start;
+        justify-content: center; */
         overflow: auto;
+        height: 100%;
+        width: 100%;
+        padding-bottom: 15px;
+    }
+    .music-panel-bottom>ul{
+        width: 100%;
     }
 
+    .music-page{
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        height: 100%;
+    }
     /* Comments */
 
     .comment-line {

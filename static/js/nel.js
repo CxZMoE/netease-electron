@@ -93,10 +93,18 @@ var Player = /** @class */ (function () {
         var player = _this.player;
         // 播放器播放模式设置为默认模式
         PData.mode = DPlayment_1.PlayMode.Normal;
+        this.playList = document.getElementById('playList');
+        this.sheetListBox = document.getElementById('sheetListBox'); // 歌单列表           // 播放列表
         // [全局定时器] 用于实时监控播放状态
         setInterval(function () {
-            _this_1.sheetListBox = document.getElementById('sheetListBox'); // 歌单列表
-            var playList = document.getElementById('playList'); // 播放列表
+            if (!_this_1.playList) {
+                try {
+                    _this_1.playList = document.getElementById('playList');
+                }
+                catch (_) {
+                    return;
+                }
+            }
             // 突出显示当前播放歌曲, 更新背景色
             if (PData.mode != DPlayment_1.PlayMode.FM) {
                 // 如果歌单列表存在，更新项目的背景色
@@ -111,12 +119,12 @@ var Player = /** @class */ (function () {
                             sheetListBoxItemSelected.style.backgroundColor = '#1e1e1e';
                         }
                         // 如果播放列表存在，更新项目的背景色
-                        if (playList && playList.children.length > 0) {
-                            var sheetListBoxItemSelected_1 = _this_1.sheetListBox.children.item(PData.pIndex);
-                            for (var i = 0; i < playList.children.length; i++) {
-                                var sheetListBoxItem = _this_1.sheetListBox.children.item(i);
+                        if (_this_1.playList && _this_1.playList.children.length > 0) {
+                            var playListItemSelected = _this_1.playList.children.item(PData.pIndex);
+                            for (var i = 0; i < _this_1.playList.children.length; i++) {
+                                var sheetListBoxItem = _this_1.playList.children.item(i);
                                 sheetListBoxItem.style.backgroundColor = '#303030';
-                                sheetListBoxItemSelected_1.style.backgroundColor = '#1e1e1e';
+                                playListItemSelected.style.backgroundColor = '#1e1e1e';
                             }
                         }
                     }
@@ -138,16 +146,16 @@ var Player = /** @class */ (function () {
         // 播放列表开关
         {
             var playlistBtn = document.getElementById('playlistBtn');
-            var playlistBox_1 = document.getElementById('playlistBox');
+            _this.playlistBox = document.getElementById('playlistBox');
             var playList_1 = document.getElementById('playList');
             // 控制播放列表元素的高度
             playlistBtn.addEventListener('click', function (e) {
-                if (playlistBox_1.style.height == '300px')
-                    playlistBox_1.style.height = '0px';
+                if (_this.playlistBox.style.height == '300px')
+                    _this.playlistBox.style.height = '0px';
                 else {
                     var playIndex = Number(PData.pIndex);
-                    playlistBox_1.style.height = '300px';
-                    playlistBox_1.scrollTop = playList_1.children.item(playIndex).offsetTop - 155;
+                    _this.playlistBox.style.height = '300px';
+                    _this.playlistBox.scrollTop = playList_1.children.item(playIndex).offsetTop - 155;
                 }
             });
         }
@@ -523,7 +531,7 @@ var Player = /** @class */ (function () {
             clearInterval(_this_1.lyricInterval);
             if (PData.currentPage == DPlayment_1.PlayerPage.Music) {
                 _this.showLyric();
-                _this.loadComment(1);
+                _this.loadComment(1, 25);
             }
         });
         // 错误处理
@@ -610,19 +618,23 @@ var Player = /** @class */ (function () {
         var status = PData.status;
         // 获取播放按钮
         var playBtn = document.getElementById('playerPlay');
+        console.log(status);
         // 如果是暂停
         if (status == DPlayment_1.PlayStatus.Pause) {
+            console.log('播放');
             player.play();
             PData.status = DPlayment_1.PlayStatus.Playing;
             // 暂停图标
             playBtn.setAttribute('src', '../pics/pause.png');
         }
         else if (DPlayment_1.PlayStatus.Stop) { // 如果是停止
+            console.log('播放');
             player.currentTime = 0;
             PData.status = DPlayment_1.PlayStatus.Playing;
             player.play();
         }
         else {
+            console.log('暂停');
             player.pause();
             PData.status = DPlayment_1.PlayStatus.Pause;
             // 播放图标
@@ -777,6 +789,7 @@ var Player = /** @class */ (function () {
     // 绑定实时当前歌单显示框
     Player.prototype.attachPlaylist = function () {
         //console\.log\('attachPlaylist');
+        var _this_1 = this;
         // 只有在不是私人FM模式下才执行
         if (PData.mode != DPlayment_1.PlayMode.FM) {
             var playList = document.getElementById('playList');
@@ -800,6 +813,7 @@ var Player = /** @class */ (function () {
                     PData.pIndex = parseInt(c.getAttribute('pIndex'));
                     // 获取歌曲播放Url
                     _this.sourceMusicUrl(c);
+                    _this_1.sheetListBox.scrollTop = (_this_1.sheetListBox.children.item(PData.pIndex)).offsetTop - 25;
                 });
                 playList.appendChild(c);
             };
@@ -820,6 +834,7 @@ var Player = /** @class */ (function () {
             // 遍历所有的歌单ID以执行一些操作
             //console\.log\(songs)
             var previous_length = _this.sheetListBox.children.length;
+            console.log("previous: ".concat(previous_length));
             var _loop_3 = function (i) {
                 //console\.log\(i);
                 ////console\.log\('添加歌单项目元素')
@@ -832,7 +847,7 @@ var Player = /** @class */ (function () {
                 li.setAttribute('pIndex', String(i));
                 li.setAttribute('musicID', _this_1.currentSheet.trackIds[i].id);
                 // 为列表项添加点击事件
-                li.addEventListener('click', function () {
+                li.addEventListener('click', function (ev) {
                     // 设置上次播放的歌曲ID
                     PData.last = PData.now;
                     PData.lIndex = PData.pIndex;
@@ -843,13 +858,14 @@ var Player = /** @class */ (function () {
                     // 为播放器绑定播放地址，并开始播放
                     _this.sourceMusicUrl(li);
                     //initMainPlaylist()
-                    _this.attachPlaylist();
+                    // _this.attachPlaylist()
                     // 初始化主播放列表
                     _this.initMainPlaylist();
+                    _this_1.playList.parentElement.scrollTop = (_this_1.playList.children.item(PData.pIndex)).offsetTop - 25;
                 });
                 // 还原坐标
                 var index = i - previous_length;
-                //console\.log\(`index: ${index}`)
+                console.log("index: ".concat(index));
                 // 为列表项目绑定歌曲名
                 li.setAttribute('name', songs[index].name);
                 ////console\.log\('['+count+']get one: '+songs[i].name)
@@ -883,10 +899,11 @@ var Player = /** @class */ (function () {
                 li.appendChild(p);
                 _this.sheetListBox.appendChild(li);
             };
-            //console\.log\(`previous: ${previous_length}`);
             for (var i = offset * limit; i < offset * limit + limit && i < _this.currentSheet.songCount; i++) {
                 _loop_3(i);
             }
+            // 添加到播放列表
+            _this.attachPlaylist();
             // 初始化主播放列表（第一次肯定为空）
             if (_this_1.firstLoad) {
                 _this.initMainPlaylist();
@@ -1037,20 +1054,6 @@ var Player = /** @class */ (function () {
                 // 为所有列表项生成综合请求参数ids，通过上面的
                 // 址可以反馈到所有列表项目音乐详情的一个数组
                 var ids = _this_1.generateIdsList();
-                // 为列表项绑定额外的数据
-                /**
-                 * // 为列表项目绑定歌曲名
-                        list.children.items('i').setAttribute('name', songs[i].name)
-                
-                        // 为列表项目绑定封面
-                        list.children.items('i').setAttribute('cover', songs[i].al.picUrl)
-                
-                        // 为列表项目绑定专辑ID
-                        list.children.items('i').setAttribute('albumId', songs[i].al.id)
-                
-                        // 为列表项目绑定专辑名称
-                        list.children.items('i').setAttribute('albumName', songs[i].al.name)
-                 */
                 _this.bindListItemName(_this.currentOffset, 20);
                 _this.currentOffset = 1;
                 // 歌单界面形成☝
@@ -1064,6 +1067,24 @@ var Player = /** @class */ (function () {
                                     //console\.log\('touch')
                                     _this.currentOffset += 1;
                                     _this.sheetListBox.scrollTop = _this.sheetListBox.scrollTop - 5;
+                                    return [4 /*yield*/, _this.bindListItemName(_this.currentOffset, 10)];
+                                case 1:
+                                    _a.sent();
+                                    _a.label = 2;
+                                case 2: return [2 /*return*/];
+                            }
+                        });
+                    });
+                };
+                _this.playlistBox.onscroll = function (ev) {
+                    return __awaiter(this, void 0, void 0, function () {
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    if (!(_this.playlistBox.scrollHeight - 1 <= _this.playlistBox.scrollTop + _this.playlistBox.clientHeight)) return [3 /*break*/, 2];
+                                    //console\.log\('touch')
+                                    _this.currentOffset += 1;
+                                    _this.playlistBox.scrollTop = _this.playlistBox.scrollTop - 5;
                                     return [4 /*yield*/, _this.bindListItemName(_this.currentOffset, 10)];
                                 case 1:
                                     _a.sent();
@@ -1313,7 +1334,7 @@ var Player = /** @class */ (function () {
                     // 更新封面
                     PData.cover = _this.mPlayList[0].cover;
                     // 加载评论
-                    _this.loadComment(1);
+                    _this.loadComment(1, 25);
                     /// 加载喜不喜欢按钮
                     _this.loadLikeBtn();
                     //loadDislikeBtn()
@@ -1325,43 +1346,39 @@ var Player = /** @class */ (function () {
         });
     };
     // 加载评论
-    Player.prototype.loadComment = function (page) {
+    Player.prototype.loadComment = function (page, limit) {
         //////console\.log\('show')
         if (page < 1) {
             page = 1;
         }
         var musicPanelBottom = document.getElementById('musicPanelBottom');
-        ////console\.log\('加载评论：' + `${netease.server}/comment/music?id=${PData.now}&limit=3&offset=${(page - 1) * 3}`)
-        fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=3&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
+        fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
             var hot = data.hotComments;
             var normal = data.comments;
-            //////console\.log\(str)
-            musicPanelBottom.innerHTML = '';
-            var hotcommentList = document.createElement('UL');
-            hotcommentList.setAttribute('id', 'hotcommentList');
-            var normalcommentList = document.createElement('UL');
-            normalcommentList.setAttribute('id', 'normalcommentList');
+            // musicPanelBottom.innerHTML = ''
+            // let hotcommentList = document.createElement('UL')
+            // hotcommentList.setAttribute('id', 'hotcommentList')
+            var normalcommentList = document.getElementById('normalcommentList');
             normalcommentList.setAttribute('count', data.total);
             normalcommentList.setAttribute('page', '1');
             normalcommentList.setAttribute('pages', String(Math.round(data.total / 3)));
-            //////console\.log\(Math.round(JSON.parse(str).total / 3))
-            for (var i = 0; i < hot.length; i++) {
-                var user = hot[i].user.nickname;
-                var content = hot[i].content;
-                var li = document.createElement('LI');
-                //li.classList.add('comment-line')
-                var contentDiv = document.createElement('DIV');
-                contentDiv.innerText = content;
-                contentDiv.classList.add('comment-line');
-                contentDiv.classList.add('light-dark');
-                var userP = document.createElement('DIV');
-                userP.classList.add('comment-label-mute');
-                userP.innerText = user;
-                contentDiv.appendChild(userP);
-                li.appendChild(contentDiv);
-                hotcommentList.appendChild(li);
-            }
             normalcommentList.innerHTML = '';
+            // for (let i = 0; i < hot.length; i++) {
+            //     let user = hot[i].user.nickname
+            //     let content = hot[i].content
+            //     let li = document.createElement('LI')
+            //     //li.classList.add('comment-line')
+            //     let contentDiv = document.createElement('DIV')
+            //     contentDiv.innerText = content
+            //     contentDiv.classList.add('comment-line')
+            //     contentDiv.classList.add('light-dark')
+            //     let userP = document.createElement('DIV')
+            //     userP.classList.add('comment-label-mute')
+            //     userP.innerText = user
+            //     contentDiv.appendChild(userP)
+            //     li.appendChild(contentDiv)
+            //     hotcommentList.appendChild(li)
+            // }
             for (var i = 0; i < normal.length; i++) {
                 var user = normal[i].user.nickname;
                 var content = normal[i].content;
@@ -1378,19 +1395,19 @@ var Player = /** @class */ (function () {
                 li.appendChild(contentDiv);
                 normalcommentList.appendChild(li);
             }
-            var hotcommentBtn = document.getElementById('hotcommentBtn');
+            // let hotcommentBtn = document.getElementById('hotcommentBtn')
             var normalcommentBtn = document.getElementById('normalcommentBtn');
-            hotcommentBtn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                hotcommentList.style.display = 'block';
-                normalcommentList.style.display = 'none';
-                document.getElementById('commentPageUp').style.display = 'none';
-                document.getElementById('commentPageDown').style.display = 'none';
-            });
+            // hotcommentBtn.addEventListener('click', (e) => {
+            //     e.stopPropagation()
+            //     // hotcommentList.style.display = 'block'
+            //     normalcommentList.style.display = 'none'
+            //     document.getElementById('commentPageUp').style.display = 'none'
+            //     document.getElementById('commentPageDown').style.display = 'none'
+            // })
             normalcommentBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 normalcommentList.style.display = 'block';
-                hotcommentList.style.display = 'none';
+                // hotcommentList.style.display = 'none'
                 document.getElementById('commentPageUp').style.display = 'block';
                 document.getElementById('commentPageDown').style.display = 'block';
                 normalcommentList.setAttribute('page', '1');
@@ -1401,7 +1418,7 @@ var Player = /** @class */ (function () {
                 if (page > 1) {
                     page = Number(page) - 1;
                     normalcommentList.setAttribute('page', String(page));
-                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=3&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
+                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
                         var normal = data.comments;
                         //////console\.log\(str)
                         if (normal != undefined) {
@@ -1427,8 +1444,8 @@ var Player = /** @class */ (function () {
                     });
                 }
             };
-            var commentPageDownFunc = function (e) {
-                e.stopPropagation();
+            var commentPageDownFunc = function () {
+                // e.stopPropagation()
                 var page = Number(normalcommentList.getAttribute('page'));
                 //////console\.log\('still')
                 //////console\.log\('still+'+page)
@@ -1440,11 +1457,11 @@ var Player = /** @class */ (function () {
                     //////console\.log\(normalcommentList.getAttribute('pages'))
                     //////console\.log\(normalcommentList.getAttribute('page'))
                     //////console\.log\(page)
-                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=3&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
+                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
                         var normal = data.comments;
                         //////console\.log\(str)
                         if (normal != undefined) {
-                            normalcommentList.innerHTML = '';
+                            // normalcommentList.innerHTML = ''
                             for (var i = 0; i < normal.length; i++) {
                                 var user = normal[i].user.nickname;
                                 var content = normal[i].content;
@@ -1472,8 +1489,17 @@ var Player = /** @class */ (function () {
             commentPageDown.style.display = 'none';
             commentPageUp.addEventListener('click', commentPageUpFunc);
             commentPageDown.addEventListener('click', commentPageDownFunc);
-            musicPanelBottom.appendChild(hotcommentList);
-            musicPanelBottom.appendChild(normalcommentList);
+            //musicPanelBottom.appendChild(hotcommentList)
+            // musicPanelBottom.appendChild(normalcommentList)
+            musicPanelBottom.onscroll = function (ev) {
+                if (musicPanelBottom.scrollHeight - 1 <= musicPanelBottom.scrollTop + musicPanelBottom.clientHeight) {
+                    //console\.log\('touch')
+                    // _this.currentOffset += 1;
+                    musicPanelBottom.scrollTop = musicPanelBottom.scrollTop - 5;
+                    // await _this.bindListItemName(_this.currentOffset, 10);
+                    commentPageDownFunc();
+                }
+            };
         });
     };
     Player.prototype.loadLikeBtn = function () {
@@ -1559,7 +1585,7 @@ var Player = /** @class */ (function () {
                             body: '评论发送成功'
                         });
                         addcommentBox.remove();
-                        _this.loadComment(1);
+                        _this.loadComment(1, 25);
                     }
                     else {
                         ////console\.log\(str)
@@ -1595,7 +1621,7 @@ var Player = /** @class */ (function () {
                 // 加载开始评论按钮
                 _this.loadAddcommentBtn();
                 // 评论
-                _this.loadComment(1);
+                _this.loadComment(1, 25);
             });
         }
     };

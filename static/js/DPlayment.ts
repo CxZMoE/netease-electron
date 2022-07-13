@@ -27,7 +27,16 @@ export class PlayerElementAttribute {
     pLength: number // 播放长度
     constructor(e) {
         this.element = e;
+        // 播放进度
+        this.pProgress = 0;
+        this.pLength = 0;
+        this.pIndex = 0;
+        this.lIndex = 0;
+        this.count = 0;
+        this.mode = PlayMode.Normal;
         this.status = PlayStatus.Stop;
+        this.now = "";
+        this.last = "";
     }
 
     // 播放网络地址

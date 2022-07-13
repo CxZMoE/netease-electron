@@ -4,7 +4,16 @@ exports.PlayerPage = exports.PlayStatus = exports.PlayMode = exports.PlayerEleme
 var PlayerElementAttribute = /** @class */ (function () {
     function PlayerElementAttribute(e) {
         this.element = e;
+        // 播放进度
+        this.pProgress = 0;
+        this.pLength = 0;
+        this.pIndex = 0;
+        this.lIndex = 0;
+        this.count = 0;
+        this.mode = PlayMode.Normal;
         this.status = PlayStatus.Stop;
+        this.now = "";
+        this.last = "";
     }
     Object.defineProperty(PlayerElementAttribute.prototype, "src", {
         get: function () {

@@ -11,7 +11,7 @@ import { PlayerElementAttribute, PlayerPage, PlayMode, PlayStatus } from './DPla
 export var netease: Netease;
 var player: HTMLAudioElement;
 var _this: Player;
-var PData :PlayerElementAttribute;
+var PData: PlayerElementAttribute;
 
 
 // 全局常量
@@ -43,6 +43,7 @@ export class Player {
     player: HTMLAudioElement;       // 播放器 <audio/>
     playList: HTMLUListElement;     // [元素]右小角可伸缩的小播放列表
     sheetListBox: HTMLUListElement; // [元素]页面右侧的歌单列表
+    playlistBox: HTMLDivElement  // 播放列表盒子
 
     isProgressMoving: boolean;      // 播放进度条正在移动
     playMode: SONG_PLAYBACK_MODE;   // 播放模式
@@ -75,17 +76,25 @@ export class Player {
 
         _this = this;
     }
-
+    
     InitDom() {
         log.LogI('初始化DOM');
         var player = _this.player;
         // 播放器播放模式设置为默认模式
         PData.mode = PlayMode.Normal;
+
+        this.playList = <HTMLUListElement>document.getElementById('playList');
+        this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');   // 歌单列表           // 播放列表
+        
         // [全局定时器] 用于实时监控播放状态
         setInterval(() => {
-            this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');   // 歌单列表
-            let playList = <HTMLUListElement>document.getElementById('playList');           // 播放列表
-
+            if (!this.playList){
+                try{
+                    this.playList = <HTMLUListElement>document.getElementById('playList');
+                }catch(_){
+                    return;
+                }
+            }
             // 突出显示当前播放歌曲, 更新背景色
             if (PData.mode != PlayMode.FM) {
                 // 如果歌单列表存在，更新项目的背景色
@@ -100,12 +109,12 @@ export class Player {
                             sheetListBoxItemSelected.style.backgroundColor = '#1e1e1e';
                         }
                         // 如果播放列表存在，更新项目的背景色
-                        if (playList && playList.children.length > 0) {
-                            let sheetListBoxItemSelected = <HTMLLIElement>this.sheetListBox.children.item(PData.pIndex);
-                            for (let i = 0; i < playList.children.length; i++) {
-                                let sheetListBoxItem = <HTMLLIElement>this.sheetListBox.children.item(i);
+                        if (this.playList && this.playList.children.length > 0) {
+                            let playListItemSelected = <HTMLLIElement>this.playList.children.item(PData.pIndex);
+                            for (let i = 0; i < this.playList.children.length; i++) {
+                                let sheetListBoxItem = <HTMLLIElement>this.playList.children.item(i);
                                 sheetListBoxItem.style.backgroundColor = '#303030'
-                                sheetListBoxItemSelected.style.backgroundColor = '#1e1e1e'
+                                playListItemSelected.style.backgroundColor = '#1e1e1e'
                             }
                         }
                     }
@@ -129,17 +138,17 @@ export class Player {
         // 播放列表开关
         {
             let playlistBtn = document.getElementById('playlistBtn');
-            let playlistBox = document.getElementById('playlistBox');
+            _this.playlistBox = <HTMLDivElement>document.getElementById('playlistBox');
             let playList = document.getElementById('playList');
 
             // 控制播放列表元素的高度
             playlistBtn.addEventListener('click', (e) => {
-                if (playlistBox.style.height == '300px')
-                    playlistBox.style.height = '0px'
+                if ( _this.playlistBox.style.height == '300px')
+                _this.playlistBox.style.height = '0px'
                 else {
                     let playIndex = Number(PData.pIndex);
-                    playlistBox.style.height = '300px'
-                    playlistBox.scrollTop = (<HTMLElement>playList.children.item(playIndex)).offsetTop - 155
+                    _this.playlistBox.style.height = '300px'
+                    _this.playlistBox.scrollTop = (<HTMLElement>playList.children.item(playIndex)).offsetTop - 155
                 }
             })
         }
@@ -574,7 +583,7 @@ export class Player {
             clearInterval(this.lyricInterval)
             if (PData.currentPage == PlayerPage.Music) {
                 _this.showLyric()
-                _this.loadComment(1)
+                _this.loadComment(1, 25)
             }
 
         })
@@ -678,19 +687,22 @@ export class Player {
         // 获取播放按钮
         let playBtn = document.getElementById('playerPlay')
 
-
+        console.log(status)
         // 如果是暂停
         if (status == PlayStatus.Pause) {
+            console.log('播放');
             player.play()
             PData.status = PlayStatus.Playing;
             // 暂停图标
             playBtn.setAttribute('src', '../pics/pause.png')
 
         } else if (PlayStatus.Stop) { // 如果是停止
+            console.log('播放');
             player.currentTime = 0
             PData.status = PlayStatus.Playing;
             player.play()
         } else {
+            console.log('暂停');
             player.pause()
             PData.status = PlayStatus.Pause;
             // 播放图标
@@ -906,6 +918,7 @@ export class Player {
 
                     // 获取歌曲播放Url
                     _this.sourceMusicUrl(c)
+                    this.sheetListBox.scrollTop = (<HTMLLIElement>(this.sheetListBox.children.item(PData.pIndex))).offsetTop - 25;
 
                 })
 
@@ -926,7 +939,7 @@ export class Player {
             // 遍历所有的歌单ID以执行一些操作
             //console\.log\(songs)
             let previous_length = _this.sheetListBox.children.length;
-            //console\.log\(`previous: ${previous_length}`);
+            console.log(`previous: ${previous_length}`);
             for (let i = offset * limit; i < offset * limit + limit && i < _this.currentSheet.songCount; i++) {
                 //console\.log\(i);
                 ////console\.log\('添加歌单项目元素')
@@ -942,7 +955,7 @@ export class Player {
                 li.setAttribute('musicID', this.currentSheet.trackIds[i].id)
 
                 // 为列表项添加点击事件
-                li.addEventListener('click', () => {
+                li.addEventListener('click', (ev) => {
 
                     // 设置上次播放的歌曲ID
                     PData.last = PData.now;
@@ -956,14 +969,15 @@ export class Player {
                     // 为播放器绑定播放地址，并开始播放
                     _this.sourceMusicUrl(li)
                     //initMainPlaylist()
-                    _this.attachPlaylist()
+                    // _this.attachPlaylist()
                     // 初始化主播放列表
                     _this.initMainPlaylist()
+                    this.playList.parentElement.scrollTop = (<HTMLLIElement>(this.playList.children.item(PData.pIndex))).offsetTop - 25;
                 })
 
                 // 还原坐标
                 let index = i - previous_length;
-                //console\.log\(`index: ${index}`)
+                console.log(`index: ${index}`)
                 // 为列表项目绑定歌曲名
                 li.setAttribute('name', songs[index].name)
                 ////console\.log\('['+count+']get one: '+songs[i].name)
@@ -1007,6 +1021,9 @@ export class Player {
 
                 _this.sheetListBox.appendChild(li)
             }
+            // 添加到播放列表
+            _this.attachPlaylist()
+
             // 初始化主播放列表（第一次肯定为空）
             if (this.firstLoad) {
                 _this.initMainPlaylist()
@@ -1181,26 +1198,12 @@ export class Player {
                 // 址可以反馈到所有列表项目音乐详情的一个数组
                 let ids = this.generateIdsList()
 
-                // 为列表项绑定额外的数据
-                /**
-                 * // 为列表项目绑定歌曲名
-                        list.children.items('i').setAttribute('name', songs[i].name)
-                
-                        // 为列表项目绑定封面
-                        list.children.items('i').setAttribute('cover', songs[i].al.picUrl)
-                
-                        // 为列表项目绑定专辑ID
-                        list.children.items('i').setAttribute('albumId', songs[i].al.id)
-                
-                        // 为列表项目绑定专辑名称
-                        list.children.items('i').setAttribute('albumName', songs[i].al.name)
-                 */
                 _this.bindListItemName(_this.currentOffset, 20)
                 _this.currentOffset = 1;
                 // 歌单界面形成☝
                 _this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');
                 _this.sheetListBox.onscroll = async function (ev: Event) {
-                    // //console\.log\('offsetHeight', _this.sheetListBox.offsetHeight);
+                    // console.log('offsetHeight', _this.sheetListBox.offsetHeight);
                     // //console\.log\('scrollHeight', _this.sheetListBox.scrollHeight);
                     // //console\.log\('scrollTop', _this.sheetListBox.scrollTop);
                     // //console\.log\('offsetTop', _this.sheetListBox.offsetTop);
@@ -1214,6 +1217,15 @@ export class Player {
 
                     }
                 }
+                _this.playlistBox.onscroll = async function(ev){
+                    if (_this.playlistBox.scrollHeight - 1 <= _this.playlistBox.scrollTop + _this.playlistBox.clientHeight) {
+                        //console\.log\('touch')
+                        _this.currentOffset += 1;
+                        _this.playlistBox.scrollTop = _this.playlistBox.scrollTop - 5;
+                        await _this.bindListItemName(_this.currentOffset, 10);
+
+                    }
+                };
             });
 
         }
@@ -1503,13 +1515,13 @@ export class Player {
                         // 更新封面
                         PData.cover = _this.mPlayList[0].cover;
                         // 加载评论
-                        _this.loadComment(1)
+                        _this.loadComment(1, 25);
                         /// 加载喜不喜欢按钮
-                        _this.loadLikeBtn()
+                        _this.loadLikeBtn();
                         //loadDislikeBtn()
-                        _this.loadCollectBtn()
+                        _this.loadCollectBtn();
                         // 加载开始评论按钮
-                        _this.loadAddcommentBtn()
+                        _this.loadAddcommentBtn();
                     })
                 },
                 this.loadMusicPage
@@ -1518,7 +1530,7 @@ export class Player {
         })
     }
     // 加载评论
-    loadComment(page) {
+    loadComment(page: number, limit: number) {
         //////console\.log\('show')
         if (page < 1) {
             page = 1
@@ -1526,44 +1538,39 @@ export class Player {
 
         let musicPanelBottom = document.getElementById('musicPanelBottom')
 
-        ////console\.log\('加载评论：' + `${netease.server}/comment/music?id=${PData.now}&limit=3&offset=${(page - 1) * 3}`)
-        fetch(`${netease.server}/comment/music?id=${PData.now}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+        fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
             let hot = data.hotComments
             let normal = data.comments
-            //////console\.log\(str)
-            musicPanelBottom.innerHTML = ''
+            // musicPanelBottom.innerHTML = ''
 
-            let hotcommentList = document.createElement('UL')
-            hotcommentList.setAttribute('id', 'hotcommentList')
+            // let hotcommentList = document.createElement('UL')
+            // hotcommentList.setAttribute('id', 'hotcommentList')
 
-            let normalcommentList = document.createElement('UL')
-            normalcommentList.setAttribute('id', 'normalcommentList')
-            normalcommentList.setAttribute('count', data.total)
-            normalcommentList.setAttribute('page', '1')
-            normalcommentList.setAttribute('pages', String(Math.round(data.total / 3)))
+            let normalcommentList = document.getElementById('normalcommentList');
+            normalcommentList.setAttribute('count', data.total);
+            normalcommentList.setAttribute('page', '1');
+            normalcommentList.setAttribute('pages', String(Math.round(data.total / 3)));
+            normalcommentList.innerHTML = '';
+            // for (let i = 0; i < hot.length; i++) {
+            //     let user = hot[i].user.nickname
+            //     let content = hot[i].content
+            //     let li = document.createElement('LI')
 
-            //////console\.log\(Math.round(JSON.parse(str).total / 3))
-            for (let i = 0; i < hot.length; i++) {
-                let user = hot[i].user.nickname
-                let content = hot[i].content
-                let li = document.createElement('LI')
+            //     //li.classList.add('comment-line')
+            //     let contentDiv = document.createElement('DIV')
+            //     contentDiv.innerText = content
+            //     contentDiv.classList.add('comment-line')
+            //     contentDiv.classList.add('light-dark')
+            //     let userP = document.createElement('DIV')
 
-                //li.classList.add('comment-line')
-                let contentDiv = document.createElement('DIV')
-                contentDiv.innerText = content
-                contentDiv.classList.add('comment-line')
-                contentDiv.classList.add('light-dark')
-                let userP = document.createElement('DIV')
+            //     userP.classList.add('comment-label-mute')
+            //     userP.innerText = user
+            //     contentDiv.appendChild(userP)
+            //     li.appendChild(contentDiv)
 
-                userP.classList.add('comment-label-mute')
-                userP.innerText = user
-                contentDiv.appendChild(userP)
-                li.appendChild(contentDiv)
+            //     hotcommentList.appendChild(li)
+            // }
 
-                hotcommentList.appendChild(li)
-            }
-
-            normalcommentList.innerHTML = ''
             for (let i = 0; i < normal.length; i++) {
                 let user = normal[i].user.nickname
                 let content = normal[i].content
@@ -1584,21 +1591,21 @@ export class Player {
                 normalcommentList.appendChild(li)
             }
 
-            let hotcommentBtn = document.getElementById('hotcommentBtn')
+            // let hotcommentBtn = document.getElementById('hotcommentBtn')
             let normalcommentBtn = document.getElementById('normalcommentBtn')
 
-            hotcommentBtn.addEventListener('click', (e) => {
+            // hotcommentBtn.addEventListener('click', (e) => {
 
-                e.stopPropagation()
-                hotcommentList.style.display = 'block'
-                normalcommentList.style.display = 'none'
-                document.getElementById('commentPageUp').style.display = 'none'
-                document.getElementById('commentPageDown').style.display = 'none'
-            })
+            //     e.stopPropagation()
+            //     // hotcommentList.style.display = 'block'
+            //     normalcommentList.style.display = 'none'
+            //     document.getElementById('commentPageUp').style.display = 'none'
+            //     document.getElementById('commentPageDown').style.display = 'none'
+            // })
             normalcommentBtn.addEventListener('click', (e) => {
                 e.stopPropagation()
                 normalcommentList.style.display = 'block'
-                hotcommentList.style.display = 'none'
+                // hotcommentList.style.display = 'none'
                 document.getElementById('commentPageUp').style.display = 'block'
                 document.getElementById('commentPageDown').style.display = 'block'
                 normalcommentList.setAttribute('page', '1')
@@ -1611,7 +1618,7 @@ export class Player {
                 if (page > 1) {
                     page = Number(page) - 1
                     normalcommentList.setAttribute('page', String(page))
-                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
                         let normal = data.comments
                         //////console\.log\(str)
                         if (normal != undefined) {
@@ -1642,8 +1649,8 @@ export class Player {
             }
 
 
-            let commentPageDownFunc = (e) => {
-                e.stopPropagation()
+            let commentPageDownFunc = () => {
+                // e.stopPropagation()
                 let page = Number(normalcommentList.getAttribute('page'))
 
                 //////console\.log\('still')
@@ -1657,11 +1664,11 @@ export class Player {
                     //////console\.log\(normalcommentList.getAttribute('pages'))
                     //////console\.log\(normalcommentList.getAttribute('page'))
                     //////console\.log\(page)
-                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=3&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
                         let normal = data.comments
                         //////console\.log\(str)
                         if (normal != undefined) {
-                            normalcommentList.innerHTML = ''
+                            // normalcommentList.innerHTML = ''
                             for (let i = 0; i < normal.length; i++) {
                                 let user = normal[i].user.nickname
                                 let content = normal[i].content
@@ -1694,8 +1701,17 @@ export class Player {
 
             commentPageDown.addEventListener('click', commentPageDownFunc)
 
-            musicPanelBottom.appendChild(hotcommentList)
-            musicPanelBottom.appendChild(normalcommentList)
+            //musicPanelBottom.appendChild(hotcommentList)
+            // musicPanelBottom.appendChild(normalcommentList)
+            musicPanelBottom.onscroll = function (ev) {
+                if (musicPanelBottom.scrollHeight - 1 <= musicPanelBottom.scrollTop + musicPanelBottom.clientHeight) {
+                    //console\.log\('touch')
+                    // _this.currentOffset += 1;
+                    musicPanelBottom.scrollTop = musicPanelBottom.scrollTop - 5;
+                    // await _this.bindListItemName(_this.currentOffset, 10);
+                    commentPageDownFunc();
+                }
+            }
         })
     }
 
@@ -1787,7 +1803,7 @@ export class Player {
                             body: '评论发送成功'
                         })
                         addcommentBox.remove()
-                        _this.loadComment(1)
+                        _this.loadComment(1, 25)
                     } else {
                         ////console\.log\(str)
                     }
@@ -1832,7 +1848,7 @@ export class Player {
                 // 加载开始评论按钮
                 _this.loadAddcommentBtn()
                 // 评论
-                _this.loadComment(1)
+                _this.loadComment(1, 25)
             })
         }
 
