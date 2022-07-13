@@ -27,7 +27,7 @@ function createWindow(title, width, height) {
         width: width,
         height: height,
         resizable: true,
-        maximizable: false,
+        maximizable: true,
         center: true,
         hasShadow:true,
         autoHideMenuBar: true,
@@ -54,7 +54,7 @@ let tray = null
 global.windowHided = {is:false}
 
 app.on('ready', function () {
-    createWindow("网易云音乐 Electron", 1280, 720)
+    createWindow("网易云音乐 Electron", 800, 600)
     tray = new Tray(__dirname + "/static/pics/BILIBILI.png")
     tray.setTitle("网易云音乐 Electron")
     const contextMenu = Menu.buildFromTemplate([

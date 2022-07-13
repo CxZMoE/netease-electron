@@ -418,35 +418,30 @@ export class Player {
         var ctlabel = document.getElementById('currentTimeLabel')
         // 处理拖动
         progressPin.addEventListener('mousedown', (e) => {
-            progressPin.setAttribute('l_x', e.x.toString())
-            this.isProgressMoving = true
+            console.log('mouse down')
+            _this.isProgressMoving = true
         })
-        progressPin.addEventListener('mouseup', (e) => {
-
-            let l_x = Number(progressPin.getAttribute('l_x'))
-            let toTime = ((l_x - progress.getBoundingClientRect().x) / progress.getBoundingClientRect().width) * PData.pLength;
+        document.addEventListener('mouseup', (e) => {
+            console.log('mouse up')
+            let toTime = ((e.clientX - progress.offsetLeft) / progress.clientWidth) * PData.pLength;
             player.currentTime = toTime
 
-            this.isProgressMoving = false
-        })
-        progressPin.addEventListener('mouseout', (e) => {
-            this.isProgressMoving = false
+            _this.isProgressMoving = false
         })
 
-        progressPin.addEventListener('mousemove', (e) => {
-            if (this.isProgressMoving) {
-
-                let rect = progressPin.getBoundingClientRect()
-
+        document.addEventListener('mousemove', (e) => {
+            console.log('mouse move')
+            if (_this.isProgressMoving) {
+                console.log('mouse mmvoe')
                 // 上一次坐标
-                let l_x = Number(progressPin.getAttribute('l_x'))
-                let toTime = ((l_x - progress.getBoundingClientRect().x) / progress.getBoundingClientRect().width) * PData.pLength;
-                ctlabel.innerText = Number(toTime / 60).toFixed(0) + ':' + (Number(toTime % 60).toFixed(toTime % 60))
+                let toTime = ((e.clientX - progress.offsetLeft) / progress.clientWidth) * PData.pLength;
+                ctlabel.innerText = Number(toTime / 60).toFixed(0) + ':' + (Number(toTime % 60).toFixed(0))
                 // 移动
-                progressPin.style.left = rect.x + (e.x - l_x) + 'px'
-
-                // 设置上一次坐标
-                progressPin.setAttribute('l_x', e.x.toString())
+                console.log("e.clientX", e.x);
+                console.log("e.offsetX", e.offsetX);
+                console.log("progress OX", progressPin.offsetLeft)
+                if (e.x < progress.clientLeft + progress.clientWidth)
+                    progressPin.style.marginLeft = e.clientX - progress.offsetLeft - 7 + 'px'
             }
 
         })
@@ -532,8 +527,6 @@ export class Player {
             this.next()
         }).bind(this))
         var progressPin = document.getElementById('progressPin');
-        let x = progressPin.getClientRects().item(0).x;
-
         // 更新播放进度
         player.addEventListener('timeupdate', (function (e) {
             // 在不拖动进度滑块的时候做：
@@ -542,30 +535,25 @@ export class Player {
                 var ctlabel = <HTMLLabelElement>document.getElementById('currentTimeLabel')
                 // 歌曲长度（秒） 标签
                 var lengthLabel = <HTMLLabelElement>document.getElementById('lengthLabel')
-                let musicLength = PData.pLength;
 
                 // 更新当前时间
-
-                ctlabel.innerText = Number(player.currentTime / 60).toFixed(0) + ':' + (Number(player.currentTime % 60).toFixed(0))
+                ctlabel.innerText = Number(PData.pTime / 60).toFixed(0) + ':' + (Number(PData.pTime % 60).toFixed(0))
 
                 // 更新总时长
-                lengthLabel.innerText = Number(musicLength / 60).toFixed(0) + ':' + (Number(musicLength % 60).toFixed(0))
+                lengthLabel.innerText = Number(PData.pLength / 60).toFixed(0) + ':' + (Number(PData.pLength % 60).toFixed(0))
 
                 // 标记歌曲进度
-                let progress = player.currentTime / player.duration
-
+                PData.pProgress = PData.pTime / player.duration
                 // progress为播放进度百分比小数形式
-                PData.pProgress = progress;
 
                 // 获取进度条滑块
-                var progressPin = document.getElementById('progressPin')
                 // 获取进度条
                 var progressBar = document.getElementById('progress')
 
                 // 计算进度条位置偏移
-                let offset = progressBar.clientWidth * progress
+                let offset = progressBar.clientWidth * PData.pProgress;
                 // 移动进度条
-                progressPin.style.left = x + offset + 'px'
+                progressPin.style.marginLeft = offset + 'px'
             }
         }));
 
@@ -1591,8 +1579,9 @@ export class Player {
                 normalcommentList.appendChild(li)
             }
 
+            // 上一页/下一页 评论
             // let hotcommentBtn = document.getElementById('hotcommentBtn')
-            let normalcommentBtn = document.getElementById('normalcommentBtn')
+            // let normalcommentBtn = document.getElementById('normalcommentBtn')
 
             // hotcommentBtn.addEventListener('click', (e) => {
 
@@ -1602,15 +1591,15 @@ export class Player {
             //     document.getElementById('commentPageUp').style.display = 'none'
             //     document.getElementById('commentPageDown').style.display = 'none'
             // })
-            normalcommentBtn.addEventListener('click', (e) => {
-                e.stopPropagation()
-                normalcommentList.style.display = 'block'
-                // hotcommentList.style.display = 'none'
-                document.getElementById('commentPageUp').style.display = 'block'
-                document.getElementById('commentPageDown').style.display = 'block'
-                normalcommentList.setAttribute('page', '1')
+            // normalcommentBtn.addEventListener('click', (e) => {
+            //     e.stopPropagation()
+            //     normalcommentList.style.display = 'block'
+            //     // hotcommentList.style.display = 'none'
+            //     document.getElementById('commentPageUp').style.display = 'block'
+            //     document.getElementById('commentPageDown').style.display = 'block'
+            //     normalcommentList.setAttribute('page', '1')
 
-            })
+            // })
 
             let commentPageUpFunc = (e) => {
                 e.stopPropagation()
@@ -1882,7 +1871,7 @@ export class Player {
                         this.lyricInterval = setInterval(() => {
                             //////console\.log\(lyricBox.scrollTop)
 
-                            let ct = PData.pTime;
+                            let ct = parseInt(String(PData.pTime));
                             let currentLine = <HTMLLIElement>document.getElementById('lyric-' + ct)
                             if (currentLine != undefined) {
                                 for (let i = 0; i < lyricLines.children.length; i++) {

@@ -70,11 +70,14 @@
     /* album styles */
 
     .album {
+        display: flex;
         /*box-shadow: 2px 1px 2px 1px #fdbc30;*/
-        width: 50px;
-        height: 50px;
+        width: 45px;
+        height: 45px;
         cursor: pointer;
         margin-right: 10px;
+        border-radius: 5px;
+        justify-self: flex-start;
     }
 
     /* ListView */
@@ -94,13 +97,16 @@
     /* Vertical*/
 
     .list-box {
+        flex: 6;
         width: 100%;
         /* self */
         margin-top: 10px;
-        max-height: 50%;
         overflow: hidden;
         overflow-y: scroll;
+        
     }
+
+    .list-box::-webkit-scrollbar {display:none}
 
     .list-item {
         /* width: 150px;
@@ -272,7 +278,7 @@
         height: 15px;
         background-color: coral;
         border-radius: 100%;
-        position: absolute;
+        line-height: 15px;
         margin-top: -6px;
     }
 
@@ -283,6 +289,10 @@
     /* Progress Bar */
 
     .progress {
+        display: flex;
+        flex-direction: row;
+        white-space: none;
+        justify-content: flex-start;
         height: 4px;
         min-width: 400px;
         background-color: #e8e8e9;
@@ -547,11 +557,10 @@
     }
 
     .sheet-detial-box {
-        width: 150px;
-        height: 310px;
+        flex: 6;
+        padding: 10px;
+        /* height: 310px; */
         /* self */
-        margin: 6px;
-        margin-left: 15px;
         text-align: center;
     }
 
