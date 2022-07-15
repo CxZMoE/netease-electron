@@ -1,3 +1,5 @@
+import { netease } from './nel';
+
 export class PlayerElementAttribute {
     now: string     // 当前播放歌曲ID
     last: string    // 上一首播放ID
@@ -23,14 +25,13 @@ export class PlayerElementAttribute {
     author: string // 当前播放歌曲作者
 
     element: HTMLAudioElement // 绑定元素
-    pProgress: number // 播放进度
     pLength: number // 播放长度
     constructor(e) {
         this.element = e;
         // 播放进度
-        this.pProgress = 0;
         this.pLength = 0;
         this.pIndex = 0;
+        this.pProgress = 0;
         this.lIndex = 0;
         this.count = 0;
         this.mode = PlayMode.Normal;
@@ -41,17 +42,22 @@ export class PlayerElementAttribute {
 
     // 播放网络地址
     public set src(v: string) {
-        console.log('>> 设置播放地址:', v);
+        // console.log('>> 设置播放地址:', v);
         this.element.setAttribute('src', v);
     }
     public get src(): string {
-        console.log(">> 获取播放地址")
+        // console.log(">> 获取播放地址")
         return this.element.src;
     }
 
+    
+    public get cover() : string {
+        return document.getElementById('diskCover').getAttribute('src');
+    }
+    
     // 当前歌曲封面URL
     public set cover(v: string) {
-        console.log(`>> [${this.currentPage}]设置封面:`, v);
+        // console.log(`>> [${this.currentPage}]设置封面:`, v);
         document.getElementById('cover').setAttribute('src', v);
         // 如果当前的页面是Music（音乐）页面，则同时刷新唱片的图片。
         if (this.currentPage == PlayerPage.Music) {
@@ -62,14 +68,26 @@ export class PlayerElementAttribute {
 
     // 当前播放时间
     public get pTime(): number {
-        console.log(">> 获取播放时间");
+        // console.log(">> 获取播放时间");
         return this.element.currentTime;
     }
 
     public set pTime(v: number) {
-        console.log(">> 设置播放时间:", v);
+        // console.log(">> 设置播放时间:", v);
         this.element.currentTime = v;
     }
+    
+    // 获取播放进度
+    
+    public get pProgress() : number {
+        return this.pTime / this.pLength;
+    }
+    
+    public set pProgress(v : number) {
+        this.element.currentTime = v * this.pLength;
+    }
+    
+    
 
 
 

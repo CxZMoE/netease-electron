@@ -54,29 +54,41 @@ export class SheetDetial {
     async GetLyric(musicId: string) {
         return fetch(`${netease.server}/lyric?id=${musicId}`).then(res => res.json()).then(data => {
             let lyric_cuts = <any[]>[];    // 歌词换行切片
-            let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
+            // let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
+
             if (data.lrc != undefined) {
                 let lyric = data.lrc.lyric
                 ////console.log(lyric)
                 let lines = lyric.split("\n")
-                for (let i = 0; i < lines.length; i++) {
-                    let line = lines[i]
-                    let lineSplt = line.split(']')
-                    if (line.length < 2) {
-                        continue
+                if (data.lrc.version == 6 || data.lrc.version == 5) {
+                    console.log(lines);
+                    for (let i = 0; i < lines.length; i++) {
+                        lyric_cuts[i] = { "time": 0, "content": lines[i] };
                     }
-                    let timeBase = lineSplt[0].slice(1).split('.')[0]
-                    // 毫秒级定位
-                    // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                    let timeMinute = timeBase.split(":")[0]
-                    let timeSecond = timeBase.split(":")[1]
-                    let time = Number(timeMinute) * 60 + Number(timeSecond)
-                    let content = lineSplt[1]
-
-                    // 添加歌词行
-                    lyric_cuts[i] = { "time": time, "content": content }
-
+                } else {
+                    for (let i = 0; i < lines.length; i++) {
+                        let line = lines[i]
+                        let lineSplt = line.split(']')
+                        if (line.length < 2) {
+                            continue
+                        }
+                        let timeBase = lineSplt[0].slice(1).split('.')[0]
+                        // 毫秒级定位
+                        // let timeExtra = lineSplt[0].slice(1).split('.')[1]
+                        let timeMinute = timeBase.split(":")[0]
+                        let timeSecond = timeBase.split(":")[1]
+                        let time = Number(timeMinute) * 60 + Number(timeSecond)
+                        let content = lineSplt[1]
+    
+                        // 添加歌词行
+                        lyric_cuts[i] = { "time": time, "content": content }
+    
+                    }
                 }
+                
+                
+
+
             }
             return lyric_cuts;
         })

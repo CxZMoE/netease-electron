@@ -19,7 +19,7 @@
 <body id="main">
     <!-- 标题栏 -->
     <div id="titlebar" class="menu inline darker">
-        <img id="login" src="" alt="banner" class="banner" style="border-radius: 100%;">
+        <img id="login" src="../pics/BILIBILI.png" alt="banner" class="banner" style="border-radius: 100%;">
         <span id="loginLabel" class="menu-item">
             未登录
         </span>
@@ -63,9 +63,11 @@
         <img id="playerNext" class="button menu-item" src="../pics/next.png" />
         <span class="progress-container inline">
             <span id="currentTimeLabel" class="progress-time menu-item timelabel">0:0</span>
-            <span id="progress" class="progress menu-item ">
-                <span id="progressPin" class="progress-pin"></span>
-            </span>
+            <div id="progress-bar" class="progress-bar">
+                <span id="progress" class="progress">
+                    <span id="progressPin" class="progress-pin"></span>
+                </span>
+            </div>
             <span id="lengthLabel" class="progress-time menu-item timelabel">0:0</span>
         </span>
         <img id="playlistBtn" class="button menu-item right" src="../pics/list.png" />

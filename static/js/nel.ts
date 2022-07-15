@@ -76,7 +76,7 @@ export class Player {
 
         _this = this;
     }
-    
+
     InitDom() {
         log.LogI('初始化DOM');
         var player = _this.player;
@@ -85,13 +85,13 @@ export class Player {
 
         this.playList = <HTMLUListElement>document.getElementById('playList');
         this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');   // 歌单列表           // 播放列表
-        
+
         // [全局定时器] 用于实时监控播放状态
         setInterval(() => {
-            if (!this.playList){
-                try{
+            if (!this.playList) {
+                try {
                     this.playList = <HTMLUListElement>document.getElementById('playList');
-                }catch(_){
+                } catch (_) {
                     return;
                 }
             }
@@ -127,9 +127,21 @@ export class Player {
             let playBtn = document.getElementById('playerPlay')
             if (status == PlayStatus.Pause) {
                 playBtn.setAttribute('src', '../pics/play.png')
+                let diskCover = document.getElementById('diskCover')
+                if (diskCover) {
+                    diskCover.className = "";
+                }
             } else if (status == PlayStatus.Stop) { // 如果是停止
+                let diskCover = document.getElementById('diskCover')
+                if (diskCover) {
+                    diskCover.className = "";
+                }
                 playBtn.setAttribute('src', '../pics/play.png')
             } else {
+                let diskCover = document.getElementById('diskCover')
+                if (diskCover) {
+                    diskCover.className = "rotating";
+                }
                 playBtn.setAttribute('src', '../pics/pause.png')
             }
 
@@ -143,8 +155,8 @@ export class Player {
 
             // 控制播放列表元素的高度
             playlistBtn.addEventListener('click', (e) => {
-                if ( _this.playlistBox.style.height == '300px')
-                _this.playlistBox.style.height = '0px'
+                if (_this.playlistBox.style.height == '300px')
+                    _this.playlistBox.style.height = '0px'
                 else {
                     let playIndex = Number(PData.pIndex);
                     _this.playlistBox.style.height = '300px'
@@ -399,10 +411,6 @@ export class Player {
                             this.initPlayer()
                             // 初始化封面点击
                             this.initCover()
-
-                            //alert(JSON.stringify(loginData))
-
-
                         }
                     }
                 })
@@ -412,39 +420,55 @@ export class Player {
     // 初始化播放进度条
     initProgrss() {
         // 为播放条添加拖拽效果
-        var progressPin = document.getElementById('progressPin')
-        var progress = document.getElementById('progress')
+        var progressPin = document.getElementById('progressPin');
+        var progress = document.getElementById('progress');
+        var progressBar = document.getElementById('progress-bar');
         var player = _this.player;
-        var ctlabel = document.getElementById('currentTimeLabel')
+        var ctlabel = document.getElementById('currentTimeLabel');
+        var totalLabel = document.getElementById('lengthLabel');
+        var offset = 0;
+
         // 处理拖动
-        progressPin.addEventListener('mousedown', (e) => {
-            console.log('mouse down')
-            _this.isProgressMoving = true
+        var pinWidth = progressPin.offsetWidth;
+        progressBar.addEventListener('mousedown', (e) => {
+            _this.isProgressMoving = true;
         })
-        document.addEventListener('mouseup', (e) => {
-            console.log('mouse up')
-            let toTime = ((e.clientX - progress.offsetLeft) / progress.clientWidth) * PData.pLength;
-            player.currentTime = toTime
-
-            _this.isProgressMoving = false
+        progressBar.addEventListener('mouseup', (e) => {
+            _this.isProgressMoving = false;
+            let barWidth = progressBar.clientWidth - pinWidth;
+            PData.pProgress = offset / barWidth;
         })
 
-        document.addEventListener('mousemove', (e) => {
-            console.log('mouse move')
+        progressBar.addEventListener('mousemove', (e) => {
             if (_this.isProgressMoving) {
-                console.log('mouse mmvoe')
-                // 上一次坐标
-                let toTime = ((e.clientX - progress.offsetLeft) / progress.clientWidth) * PData.pLength;
-                ctlabel.innerText = Number(toTime / 60).toFixed(0) + ':' + (Number(toTime % 60).toFixed(0))
-                // 移动
-                console.log("e.clientX", e.x);
-                console.log("e.offsetX", e.offsetX);
-                console.log("progress OX", progressPin.offsetLeft)
-                if (e.x < progress.clientLeft + progress.clientWidth)
-                    progressPin.style.marginLeft = e.clientX - progress.offsetLeft - 7 + 'px'
+                let barWidth = progressBar.clientWidth - pinWidth;
+                offset = e.x - progressBar.offsetLeft - pinWidth / 2;
+                // console.log(progress.clientWidth)
+                if (offset >= 0 && offset < barWidth) {
+                    progressPin.style.marginLeft = offset + 'px';
+                }
             }
-
         })
+
+        // progressBar.addEventListener('mouseout', (e)=>{
+        //     _this.isProgressMoving = false;
+        // })
+
+
+
+        player.addEventListener('timeupdate', function () {
+            // PData.pLength 歌曲长度[s]
+            // PData.pTime   播放时间[s]
+
+            // 更新播放进度
+            totalLabel.innerHTML = `${(PData.pLength / 60).toFixed(0)}:${(PData.pLength % 60).toFixed(0)}`;
+            ctlabel.innerText = `${(PData.pTime / 60).toFixed(0)}:${(PData.pTime % 60).toFixed(0)}`;
+            if (!_this.isProgressMoving) {
+                var barWidth = progressBar.clientWidth - pinWidth;
+                offset = barWidth * PData.pProgress;
+                progressPin.style.marginLeft = offset + 'px';
+            }
+        });
     }
 
     // 初始化侧边栏事件
@@ -524,37 +548,7 @@ export class Player {
         // 播放完毕时候下一首
         player.addEventListener('ended', (function () {
             // 下一首
-            this.next()
-        }).bind(this))
-        var progressPin = document.getElementById('progressPin');
-        // 更新播放进度
-        player.addEventListener('timeupdate', (function (e) {
-            // 在不拖动进度滑块的时候做：
-            if (!_this.isProgressMoving) {
-                // 当前播放时间（秒） 标签
-                var ctlabel = <HTMLLabelElement>document.getElementById('currentTimeLabel')
-                // 歌曲长度（秒） 标签
-                var lengthLabel = <HTMLLabelElement>document.getElementById('lengthLabel')
-
-                // 更新当前时间
-                ctlabel.innerText = Number(PData.pTime / 60).toFixed(0) + ':' + (Number(PData.pTime % 60).toFixed(0))
-
-                // 更新总时长
-                lengthLabel.innerText = Number(PData.pLength / 60).toFixed(0) + ':' + (Number(PData.pLength % 60).toFixed(0))
-
-                // 标记歌曲进度
-                PData.pProgress = PData.pTime / player.duration
-                // progress为播放进度百分比小数形式
-
-                // 获取进度条滑块
-                // 获取进度条
-                var progressBar = document.getElementById('progress')
-
-                // 计算进度条位置偏移
-                let offset = progressBar.clientWidth * PData.pProgress;
-                // 移动进度条
-                progressPin.style.marginLeft = offset + 'px'
-            }
+            _this.next()
         }));
 
         // 加载完毕后设置长度参数
@@ -667,6 +661,7 @@ export class Player {
 
     // 播放
     play() {
+        console.log("播放按钮")
         var player = _this.player;
         // 获取播放器控件
         // 获取播放状态
@@ -675,7 +670,7 @@ export class Player {
         // 获取播放按钮
         let playBtn = document.getElementById('playerPlay')
 
-        console.log(status)
+        // console.log(status)
         // 如果是暂停
         if (status == PlayStatus.Pause) {
             console.log('播放');
@@ -684,11 +679,11 @@ export class Player {
             // 暂停图标
             playBtn.setAttribute('src', '../pics/pause.png')
 
-        } else if (PlayStatus.Stop) { // 如果是停止
+        } else if (status == PlayStatus.Stop) { // 如果是停止
             console.log('播放');
             player.currentTime = 0
-            PData.status = PlayStatus.Playing;
             player.play()
+            PData.status = PlayStatus.Playing;
         } else {
             console.log('暂停');
             player.pause()
@@ -834,7 +829,7 @@ export class Player {
     getFav() {
         let uid = netease.data.account.id
 
-        fetch(`${netease.server}/user/playlist?uid=${uid}`).then(res => res.json()).then(data => {
+        fetch(`${netease.server}/user/playlist?uid=${uid}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
             let sheetlist = data.playlist;
             // 清空内容
             _this.sheetListBox.innerHTML = '';
@@ -906,8 +901,10 @@ export class Player {
 
                     // 获取歌曲播放Url
                     _this.sourceMusicUrl(c)
-                    this.sheetListBox.scrollTop = (<HTMLLIElement>(this.sheetListBox.children.item(PData.pIndex))).offsetTop - 25;
-
+                    this.playList.scrollTop = (<HTMLLIElement>(this.playList.children.item(PData.pIndex))).offsetTop - 25;
+                    if (this.sheetListBox && this.sheetListBox.children.length > 0) {
+                        this.sheetListBox.scrollTop = (<HTMLLIElement>(this.playList.children.item(PData.pIndex))).offsetTop - 25;
+                    }
                 })
 
                 playList.appendChild(c)
@@ -927,7 +924,7 @@ export class Player {
             // 遍历所有的歌单ID以执行一些操作
             //console\.log\(songs)
             let previous_length = _this.sheetListBox.children.length;
-            console.log(`previous: ${previous_length}`);
+            // console.log(`previous: ${previous_length}`);
             for (let i = offset * limit; i < offset * limit + limit && i < _this.currentSheet.songCount; i++) {
                 //console\.log\(i);
                 ////console\.log\('添加歌单项目元素')
@@ -965,7 +962,7 @@ export class Player {
 
                 // 还原坐标
                 let index = i - previous_length;
-                console.log(`index: ${index}`)
+                // console.log(`index: ${index}`)
                 // 为列表项目绑定歌曲名
                 li.setAttribute('name', songs[index].name)
                 ////console\.log\('['+count+']get one: '+songs[i].name)
@@ -1205,7 +1202,7 @@ export class Player {
 
                     }
                 }
-                _this.playlistBox.onscroll = async function(ev){
+                _this.playlistBox.onscroll = async function (ev) {
                     if (_this.playlistBox.scrollHeight - 1 <= _this.playlistBox.scrollTop + _this.playlistBox.clientHeight) {
                         //console\.log\('touch')
                         _this.currentOffset += 1;
@@ -1221,7 +1218,7 @@ export class Player {
     }
 
     initMainPlaylist() {
-        let list = _this.sheetListBox;
+        let list = _this.playList;
         // 生成主播放列表（播放后切换到这个歌单）
         // 清空
         _this.mPlayList = []
@@ -1247,7 +1244,7 @@ export class Player {
     getSheets() {
         let id = netease.data.account.id
         // 根据用户ID请求用户歌单简略信息
-        fetch(`${netease.server}/user/playlist?uid=${id}`).then(res => res.json()).then(data => {
+        fetch(`${netease.server}/user/playlist?uid=${id}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
             // 获取列表盒子
 
             // 解析JSON为对象
@@ -1526,7 +1523,7 @@ export class Player {
 
         let musicPanelBottom = document.getElementById('musicPanelBottom')
 
-        fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+        fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
             let hot = data.hotComments
             let normal = data.comments
             // musicPanelBottom.innerHTML = ''
@@ -1607,7 +1604,7 @@ export class Player {
                 if (page > 1) {
                     page = Number(page) - 1
                     normalcommentList.setAttribute('page', String(page))
-                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
                         let normal = data.comments
                         //////console\.log\(str)
                         if (normal != undefined) {
@@ -1653,7 +1650,7 @@ export class Player {
                     //////console\.log\(normalcommentList.getAttribute('pages'))
                     //////console\.log\(normalcommentList.getAttribute('page'))
                     //////console\.log\(page)
-                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}`).then(res => res.json()).then(data => {
+                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
                         let normal = data.comments
                         //////console\.log\(str)
                         if (normal != undefined) {
@@ -1682,13 +1679,13 @@ export class Player {
                     })
                 }
             }
-            let commentPageUp = document.getElementById('commentPageUp')
-            let commentPageDown = document.getElementById('commentPageDown')
-            commentPageUp.style.display = 'none'
-            commentPageDown.style.display = 'none'
-            commentPageUp.addEventListener('click', commentPageUpFunc)
+            // let commentPageUp = document.getElementById('commentPageUp')
+            // let commentPageDown = document.getElementById('commentPageDown')
+            // commentPageUp.style.display = 'none'
+            // commentPageDown.style.display = 'none'
+            // commentPageUp.addEventListener('click', commentPageUpFunc)
 
-            commentPageDown.addEventListener('click', commentPageDownFunc)
+            // commentPageDown.addEventListener('click', commentPageDownFunc)
 
             //musicPanelBottom.appendChild(hotcommentList)
             // musicPanelBottom.appendChild(normalcommentList)
@@ -1732,7 +1729,7 @@ export class Player {
         let collectBtn = document.getElementById('collectBtn')
         collectBtn.addEventListener('click', (e) => {
             let mid = PData.now
-            fetch(`${netease.server}/user/playlist?uid=${netease.data.account.id}`).then(res => res.json()).then(data => {
+            fetch(`${netease.server}/user/playlist?uid=${netease.data.account.id}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
                 let sheetlist = data.playlist
                 ////console\.log\('[url]'+`${netease.server}/user/playlist?uid=${this.data.account.id}`+'sheetlist:'+str)
                 let req = new XMLHttpRequest()
@@ -1849,6 +1846,7 @@ export class Player {
             (lyricCuts) => {
                 readFile(path.join(__dirname, '../pages/lyric.html'), (err, data) => {
                     let lyricBox = document.getElementById('lyric')
+                    let lyricLines = document.getElementById("lyric-lines");
                     lyricBox.innerHTML = data.toString()
 
                     // 根据歌词的长度判断歌曲是轻音乐还是正常歌曲
@@ -1870,21 +1868,21 @@ export class Player {
 
                         this.lyricInterval = setInterval(() => {
                             //////console\.log\(lyricBox.scrollTop)
-
                             let ct = parseInt(String(PData.pTime));
                             let currentLine = <HTMLLIElement>document.getElementById('lyric-' + ct)
                             if (currentLine != undefined) {
-                                for (let i = 0; i < lyricLines.children.length; i++) {
-                                    let lyricLine = <HTMLLIElement>lyricLines.children.item(i)
-                                    lyricLine.style.color = 'ivory'
+                                for (let i=0;i<lyricLines.children.length;i++){
+                                    (<HTMLLIElement>lyricLines.children[i]).style.color = 'ivory';
                                 }
-                                currentLine.style.color = 'coral'
-                                //////console\.log\(currentLine.offsetTop)
-                                // 保持歌词内容显示
-                                lyricBox.scrollTop = currentLine.offsetTop - 132
+                                currentLine.style.color = 'coral';
+                            
+                                // var prevoisLine = <HTMLLIElement>currentLine.previousElementSibling;
+                                // if (prevoisLine) {
+                                //     prevoisLine.style.color = 'ivory';
+                                // }
+                                // console.log(currentLine.offsetTop)
+                                lyricLines.scrollTop = currentLine.offsetTop - (lyricLines.clientHeight / 2);
                             }
-
-
                         }, 200);
                     } else {
                         _this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');

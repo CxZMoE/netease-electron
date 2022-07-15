@@ -135,11 +135,23 @@ var Player = /** @class */ (function () {
             var playBtn = document.getElementById('playerPlay');
             if (status == DPlayment_1.PlayStatus.Pause) {
                 playBtn.setAttribute('src', '../pics/play.png');
+                var diskCover = document.getElementById('diskCover');
+                if (diskCover) {
+                    diskCover.className = "";
+                }
             }
             else if (status == DPlayment_1.PlayStatus.Stop) { // 如果是停止
+                var diskCover = document.getElementById('diskCover');
+                if (diskCover) {
+                    diskCover.className = "";
+                }
                 playBtn.setAttribute('src', '../pics/play.png');
             }
             else {
+                var diskCover = document.getElementById('diskCover');
+                if (diskCover) {
+                    diskCover.className = "rotating";
+                }
                 playBtn.setAttribute('src', '../pics/pause.png');
             }
         }, 500);
@@ -381,7 +393,6 @@ var Player = /** @class */ (function () {
                             _this_1.initPlayer();
                             // 初始化封面点击
                             _this_1.initCover();
-                            //alert(JSON.stringify(loginData))
                         }
                     }
                 });
@@ -393,32 +404,44 @@ var Player = /** @class */ (function () {
         // 为播放条添加拖拽效果
         var progressPin = document.getElementById('progressPin');
         var progress = document.getElementById('progress');
+        var progressBar = document.getElementById('progress-bar');
         var player = _this.player;
         var ctlabel = document.getElementById('currentTimeLabel');
+        var totalLabel = document.getElementById('lengthLabel');
+        var offset = 0;
         // 处理拖动
-        progressPin.addEventListener('mousedown', function (e) {
-            console.log('mouse down');
+        var pinWidth = progressPin.offsetWidth;
+        progressBar.addEventListener('mousedown', function (e) {
             _this.isProgressMoving = true;
         });
-        document.addEventListener('mouseup', function (e) {
-            console.log('mouse up');
-            var toTime = ((e.clientX - progress.offsetLeft) / progress.clientWidth) * PData.pLength;
-            player.currentTime = toTime;
+        progressBar.addEventListener('mouseup', function (e) {
             _this.isProgressMoving = false;
+            var barWidth = progressBar.clientWidth - pinWidth;
+            PData.pProgress = offset / barWidth;
         });
-        document.addEventListener('mousemove', function (e) {
-            console.log('mouse move');
+        progressBar.addEventListener('mousemove', function (e) {
             if (_this.isProgressMoving) {
-                console.log('mouse mmvoe');
-                // 上一次坐标
-                var toTime = ((e.clientX - progress.offsetLeft) / progress.clientWidth) * PData.pLength;
-                ctlabel.innerText = Number(toTime / 60).toFixed(0) + ':' + (Number(toTime % 60).toFixed(0));
-                // 移动
-                console.log("e.clientX", e.x);
-                console.log("e.offsetX", e.offsetX);
-                console.log("progress OX", progressPin.offsetLeft);
-                if (e.x < progress.clientLeft + progress.clientWidth)
-                    progressPin.style.marginLeft = e.clientX - progress.offsetLeft - 7 + 'px';
+                var barWidth = progressBar.clientWidth - pinWidth;
+                offset = e.x - progressBar.offsetLeft - pinWidth / 2;
+                // console.log(progress.clientWidth)
+                if (offset >= 0 && offset < barWidth) {
+                    progressPin.style.marginLeft = offset + 'px';
+                }
+            }
+        });
+        // progressBar.addEventListener('mouseout', (e)=>{
+        //     _this.isProgressMoving = false;
+        // })
+        player.addEventListener('timeupdate', function () {
+            // PData.pLength 歌曲长度[s]
+            // PData.pTime   播放时间[s]
+            // 更新播放进度
+            totalLabel.innerHTML = "".concat((PData.pLength / 60).toFixed(0), ":").concat((PData.pLength % 60).toFixed(0));
+            ctlabel.innerText = "".concat((PData.pTime / 60).toFixed(0), ":").concat((PData.pTime % 60).toFixed(0));
+            if (!_this.isProgressMoving) {
+                var barWidth = progressBar.clientWidth - pinWidth;
+                offset = barWidth * PData.pProgress;
+                progressPin.style.marginLeft = offset + 'px';
             }
         });
     };
@@ -488,32 +511,7 @@ var Player = /** @class */ (function () {
         // 播放完毕时候下一首
         player.addEventListener('ended', (function () {
             // 下一首
-            this.next();
-        }).bind(this));
-        var progressPin = document.getElementById('progressPin');
-        // 更新播放进度
-        player.addEventListener('timeupdate', (function (e) {
-            // 在不拖动进度滑块的时候做：
-            if (!_this.isProgressMoving) {
-                // 当前播放时间（秒） 标签
-                var ctlabel = document.getElementById('currentTimeLabel');
-                // 歌曲长度（秒） 标签
-                var lengthLabel = document.getElementById('lengthLabel');
-                // 更新当前时间
-                ctlabel.innerText = Number(PData.pTime / 60).toFixed(0) + ':' + (Number(PData.pTime % 60).toFixed(0));
-                // 更新总时长
-                lengthLabel.innerText = Number(PData.pLength / 60).toFixed(0) + ':' + (Number(PData.pLength % 60).toFixed(0));
-                // 标记歌曲进度
-                PData.pProgress = PData.pTime / player.duration;
-                // progress为播放进度百分比小数形式
-                // 获取进度条滑块
-                // 获取进度条
-                var progressBar = document.getElementById('progress');
-                // 计算进度条位置偏移
-                var offset = progressBar.clientWidth * PData.pProgress;
-                // 移动进度条
-                progressPin.style.marginLeft = offset + 'px';
-            }
+            _this.next();
         }));
         // 加载完毕后设置长度参数
         player.addEventListener('canplay', function () {
@@ -606,13 +604,14 @@ var Player = /** @class */ (function () {
      */
     // 播放
     Player.prototype.play = function () {
+        console.log("播放按钮");
         var player = _this.player;
         // 获取播放器控件
         // 获取播放状态
         var status = PData.status;
         // 获取播放按钮
         var playBtn = document.getElementById('playerPlay');
-        console.log(status);
+        // console.log(status)
         // 如果是暂停
         if (status == DPlayment_1.PlayStatus.Pause) {
             console.log('播放');
@@ -621,11 +620,11 @@ var Player = /** @class */ (function () {
             // 暂停图标
             playBtn.setAttribute('src', '../pics/pause.png');
         }
-        else if (DPlayment_1.PlayStatus.Stop) { // 如果是停止
+        else if (status == DPlayment_1.PlayStatus.Stop) { // 如果是停止
             console.log('播放');
             player.currentTime = 0;
-            PData.status = DPlayment_1.PlayStatus.Playing;
             player.play();
+            PData.status = DPlayment_1.PlayStatus.Playing;
         }
         else {
             console.log('暂停');
@@ -750,7 +749,7 @@ var Player = /** @class */ (function () {
     // 获取我喜欢的音乐
     Player.prototype.getFav = function () {
         var uid = exports.netease.data.account.id;
-        fetch("".concat(exports.netease.server, "/user/playlist?uid=").concat(uid)).then(function (res) { return res.json(); }).then(function (data) {
+        fetch("".concat(exports.netease.server, "/user/playlist?uid=").concat(uid, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
             var sheetlist = data.playlist;
             // 清空内容
             _this.sheetListBox.innerHTML = '';
@@ -807,7 +806,10 @@ var Player = /** @class */ (function () {
                     PData.pIndex = parseInt(c.getAttribute('pIndex'));
                     // 获取歌曲播放Url
                     _this.sourceMusicUrl(c);
-                    _this_1.sheetListBox.scrollTop = (_this_1.sheetListBox.children.item(PData.pIndex)).offsetTop - 25;
+                    _this_1.playList.scrollTop = (_this_1.playList.children.item(PData.pIndex)).offsetTop - 25;
+                    if (_this_1.sheetListBox && _this_1.sheetListBox.children.length > 0) {
+                        _this_1.sheetListBox.scrollTop = (_this_1.playList.children.item(PData.pIndex)).offsetTop - 25;
+                    }
                 });
                 playList.appendChild(c);
             };
@@ -828,7 +830,6 @@ var Player = /** @class */ (function () {
             // 遍历所有的歌单ID以执行一些操作
             //console\.log\(songs)
             var previous_length = _this.sheetListBox.children.length;
-            console.log("previous: ".concat(previous_length));
             var _loop_3 = function (i) {
                 //console\.log\(i);
                 ////console\.log\('添加歌单项目元素')
@@ -859,7 +860,7 @@ var Player = /** @class */ (function () {
                 });
                 // 还原坐标
                 var index = i - previous_length;
-                console.log("index: ".concat(index));
+                // console.log(`index: ${index}`)
                 // 为列表项目绑定歌曲名
                 li.setAttribute('name', songs[index].name);
                 ////console\.log\('['+count+']get one: '+songs[i].name)
@@ -893,6 +894,7 @@ var Player = /** @class */ (function () {
                 li.appendChild(p);
                 _this.sheetListBox.appendChild(li);
             };
+            // console.log(`previous: ${previous_length}`);
             for (var i = offset * limit; i < offset * limit + limit && i < _this.currentSheet.songCount; i++) {
                 _loop_3(i);
             }
@@ -1092,7 +1094,7 @@ var Player = /** @class */ (function () {
         }
     };
     Player.prototype.initMainPlaylist = function () {
-        var list = _this.sheetListBox;
+        var list = _this.playList;
         // 生成主播放列表（播放后切换到这个歌单）
         // 清空
         _this.mPlayList = [];
@@ -1117,7 +1119,7 @@ var Player = /** @class */ (function () {
         var _this_1 = this;
         var id = exports.netease.data.account.id;
         // 根据用户ID请求用户歌单简略信息
-        fetch("".concat(exports.netease.server, "/user/playlist?uid=").concat(id)).then(function (res) { return res.json(); }).then(function (data) {
+        fetch("".concat(exports.netease.server, "/user/playlist?uid=").concat(id, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
             // 获取列表盒子
             // 解析JSON为对象
             // 请求失败
@@ -1346,7 +1348,7 @@ var Player = /** @class */ (function () {
             page = 1;
         }
         var musicPanelBottom = document.getElementById('musicPanelBottom');
-        fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
+        fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
             var hot = data.hotComments;
             var normal = data.comments;
             // musicPanelBottom.innerHTML = ''
@@ -1413,7 +1415,7 @@ var Player = /** @class */ (function () {
                 if (page > 1) {
                     page = Number(page) - 1;
                     normalcommentList.setAttribute('page', String(page));
-                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
+                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
                         var normal = data.comments;
                         //////console\.log\(str)
                         if (normal != undefined) {
@@ -1452,7 +1454,7 @@ var Player = /** @class */ (function () {
                     //////console\.log\(normalcommentList.getAttribute('pages'))
                     //////console\.log\(normalcommentList.getAttribute('page'))
                     //////console\.log\(page)
-                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3)).then(function (res) { return res.json(); }).then(function (data) {
+                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
                         var normal = data.comments;
                         //////console\.log\(str)
                         if (normal != undefined) {
@@ -1478,12 +1480,12 @@ var Player = /** @class */ (function () {
                     });
                 }
             };
-            var commentPageUp = document.getElementById('commentPageUp');
-            var commentPageDown = document.getElementById('commentPageDown');
-            commentPageUp.style.display = 'none';
-            commentPageDown.style.display = 'none';
-            commentPageUp.addEventListener('click', commentPageUpFunc);
-            commentPageDown.addEventListener('click', commentPageDownFunc);
+            // let commentPageUp = document.getElementById('commentPageUp')
+            // let commentPageDown = document.getElementById('commentPageDown')
+            // commentPageUp.style.display = 'none'
+            // commentPageDown.style.display = 'none'
+            // commentPageUp.addEventListener('click', commentPageUpFunc)
+            // commentPageDown.addEventListener('click', commentPageDownFunc)
             //musicPanelBottom.appendChild(hotcommentList)
             // musicPanelBottom.appendChild(normalcommentList)
             musicPanelBottom.onscroll = function (ev) {
@@ -1524,7 +1526,7 @@ var Player = /** @class */ (function () {
         var collectBtn = document.getElementById('collectBtn');
         collectBtn.addEventListener('click', function (e) {
             var mid = PData.now;
-            fetch("".concat(exports.netease.server, "/user/playlist?uid=").concat(exports.netease.data.account.id)).then(function (res) { return res.json(); }).then(function (data) {
+            fetch("".concat(exports.netease.server, "/user/playlist?uid=").concat(exports.netease.data.account.id, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
                 var sheetlist = data.playlist;
                 ////console\.log\('[url]'+`${netease.server}/user/playlist?uid=${this.data.account.id}`+'sheetlist:'+str)
                 var req = new XMLHttpRequest();
@@ -1626,6 +1628,7 @@ var Player = /** @class */ (function () {
         this.currentSheet.GetLyric(PData.now).then(function (lyricCuts) {
             readFile(path.join(__dirname, '../pages/lyric.html'), function (err, data) {
                 var lyricBox = document.getElementById('lyric');
+                var lyricLines = document.getElementById("lyric-lines");
                 lyricBox.innerHTML = data.toString();
                 // 根据歌词的长度判断歌曲是轻音乐还是正常歌曲
                 if (lyricCuts.length > 0) {
@@ -1652,22 +1655,24 @@ var Player = /** @class */ (function () {
                         var currentLine = document.getElementById('lyric-' + ct);
                         if (currentLine != undefined) {
                             for (var i = 0; i < lyricLines_1.children.length; i++) {
-                                var lyricLine = lyricLines_1.children.item(i);
-                                lyricLine.style.color = 'ivory';
+                                lyricLines_1.children[i].style.color = 'ivory';
                             }
                             currentLine.style.color = 'coral';
-                            //////console\.log\(currentLine.offsetTop)
-                            // 保持歌词内容显示
-                            lyricBox.scrollTop = currentLine.offsetTop - 132;
+                            // var prevoisLine = <HTMLLIElement>currentLine.previousElementSibling;
+                            // if (prevoisLine) {
+                            //     prevoisLine.style.color = 'ivory';
+                            // }
+                            // console.log(currentLine.offsetTop)
+                            lyricLines_1.scrollTop = currentLine.offsetTop - (lyricLines_1.clientHeight / 2);
                         }
                     }, 200);
                 }
                 else {
                     _this.sheetListBox = document.getElementById('sheetListBox');
-                    var lyricLines = document.getElementById('lyric-lines');
+                    var lyricLines_2 = document.getElementById('lyric-lines');
                     var l = document.createElement('LI');
                     l.innerText = '纯音乐，敬请聆听。';
-                    lyricLines.appendChild(l);
+                    lyricLines_2.appendChild(l);
                 }
             });
         });
