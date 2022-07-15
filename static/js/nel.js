@@ -476,6 +476,7 @@ var Player = /** @class */ (function () {
         fmBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             PData.mode = DPlayment_1.PlayMode.FM;
+            PData.currentPage = DPlayment_1.PlayerPage.Music;
             _this.loadMusicPage();
         });
         // 心跳点击
@@ -484,6 +485,8 @@ var Player = /** @class */ (function () {
             e.stopPropagation();
             // getFav()
             _this.getHeart();
+            PData.currentPage = DPlayment_1.PlayerPage.Home;
+            PData.mode = DPlayment_1.PlayMode.HEART;
         });
         // 每日推荐被点击
         var dailyRecommendBtn = document.getElementById('dailyRecommendBtn');
@@ -495,7 +498,7 @@ var Player = /** @class */ (function () {
                 _this.sheetListBox = document.getElementById('sheetListBox');
                 _this.loadDailyRecommandedSongs();
                 PData.currentPage = DPlayment_1.PlayerPage.Home;
-                PData.mode = DPlayment_1.PlayMode.Normal;
+                PData.mode = DPlayment_1.PlayMode.DAILYREC;
             });
         });
     };
@@ -730,6 +733,8 @@ var Player = /** @class */ (function () {
         var cover = document.getElementById('cover');
         var player = _this.player;
         cover.addEventListener('click', function (e) {
+            console.log(PData.currentPage);
+            console.log(PData.mode);
             e.stopPropagation();
             var page = PData.currentPage;
             if (page == DPlayment_1.PlayerPage.Music) {
@@ -737,7 +742,19 @@ var Player = /** @class */ (function () {
                     var MainPage = document.getElementById('content');
                     MainPage.innerHTML = data.toString();
                     _this.sheetListBox = document.getElementById('sheetListBox');
-                    _this.getSheet(PData.sheet);
+                    switch (PData.mode) {
+                        case DPlayment_1.PlayMode.DAILYREC: {
+                            _this.loadDailyRecommandedSongs();
+                        }
+                        case DPlayment_1.PlayMode.Normal: {
+                            console.log("获取歌单Normal");
+                            _this.getSheet(PData.sheet);
+                        }
+                        case DPlayment_1.PlayMode.FM: {
+                            console.log("获取FM歌单");
+                            _this.getSheet(PData.sheet);
+                        }
+                    }
                     PData.currentPage = DPlayment_1.PlayerPage.Home;
                 });
             }
@@ -794,7 +811,6 @@ var Player = /** @class */ (function () {
                 var title = c.getElementsByTagName('P')[0];
                 title.innerText = title.innerText.split('-')[0];
                 c.addEventListener('click', function () {
-                    PData.mode = DPlayment_1.PlayMode.Normal;
                     // 初始化主播放列表
                     _this.initMainPlaylist();
                     //attachPlaylist()
@@ -1030,19 +1046,23 @@ var Player = /** @class */ (function () {
                 _this_1.currentSheet = data;
                 // playlist.trackIds 为当前歌单的所有歌曲ID的列表（只包含ID）
                 // 设置player的播放列表长度参数
-                PData.count = data.songCount;
-                // 设置当前播放的歌单名称
-                PData.sheetName = data.name;
-                // 绑定当前歌单创造者
-                PData.sheetCreator = data.creator;
-                // 绑定当前歌单播放数
-                PData.sheetPlayCount = data.playCount;
-                // 绑定当前歌单歌曲数
-                PData.sheetTrackCount = data.songCount;
-                // 绑定当前歌单简介
-                PData.sheetDescription = (data.description == null) ? '单主很懒，没有写简介。' : data.description;
-                // 绑定当前歌单封面
-                PData.sheetCover = data.coverUrl;
+                try {
+                    PData.count = data.songCount;
+                    // 设置当前播放的歌单名称
+                    PData.sheetName = data.name;
+                    // 绑定当前歌单创造者
+                    PData.sheetCreator = data.creator;
+                    // 绑定当前歌单播放数
+                    PData.sheetPlayCount = data.playCount;
+                    // 绑定当前歌单歌曲数
+                    PData.sheetTrackCount = data.songCount;
+                    // 绑定当前歌单简介
+                    PData.sheetDescription = (data.description == null) ? '单主很懒，没有写简介。' : data.description;
+                    // 绑定当前歌单封面
+                    PData.sheetCover = data.coverUrl;
+                }
+                catch (_) { }
+                ;
                 // 加载歌单详情框
                 _this_1.loadSheetDetialBox();
                 // 这个时候列表项还没有获取到歌曲名和专辑图片，需要另外获取
@@ -1599,7 +1619,7 @@ var Player = /** @class */ (function () {
         if (PData.mode == DPlayment_1.PlayMode.FM) {
             this.loadFM();
         }
-        if (PData.mode == DPlayment_1.PlayMode.Normal) {
+        if (PData.mode == DPlayment_1.PlayMode.Normal || PData.mode == DPlayment_1.PlayMode.DAILYREC || PData.mode == DPlayment_1.PlayMode.HEART) {
             readFile(path.join(__dirname, '../pages/music.html'), function (err, data) {
                 document.getElementById('content').innerHTML = data.toString();
                 _this.sheetListBox = document.getElementById('sheetListBox');

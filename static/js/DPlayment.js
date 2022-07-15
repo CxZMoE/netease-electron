@@ -77,6 +77,8 @@ var PlayMode;
 (function (PlayMode) {
     PlayMode[PlayMode["Normal"] = 0] = "Normal";
     PlayMode[PlayMode["FM"] = 1] = "FM";
+    PlayMode[PlayMode["DAILYREC"] = 2] = "DAILYREC";
+    PlayMode[PlayMode["HEART"] = 3] = "HEART";
 })(PlayMode = exports.PlayMode || (exports.PlayMode = {}));
 var PlayStatus;
 (function (PlayStatus) {

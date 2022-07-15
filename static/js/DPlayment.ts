@@ -54,7 +54,7 @@ export class PlayerElementAttribute {
     public get cover() : string {
         return document.getElementById('diskCover').getAttribute('src');
     }
-    
+
     // 当前歌曲封面URL
     public set cover(v: string) {
         // console.log(`>> [${this.currentPage}]设置封面:`, v);
@@ -99,7 +99,9 @@ export class PlayerElementAttribute {
 
 export enum PlayMode {
     Normal = 0,
-    FM = 1
+    FM,
+    DAILYREC,
+    HEART
 }
 
 export enum PlayStatus {

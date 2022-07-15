@@ -505,7 +505,7 @@ export class Player {
         fmBtn.addEventListener('click', function (e) {
             e.stopPropagation()
             PData.mode = PlayMode.FM
-
+            PData.currentPage = PlayerPage.Music;
             _this.loadMusicPage()
 
         })
@@ -516,6 +516,8 @@ export class Player {
             e.stopPropagation()
             // getFav()
             _this.getHeart()
+            PData.currentPage = PlayerPage.Home;
+            PData.mode = PlayMode.HEART;
         })
 
         // 每日推荐被点击
@@ -528,7 +530,7 @@ export class Player {
                 _this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');
                 _this.loadDailyRecommandedSongs()
                 PData.currentPage = PlayerPage.Home;
-                PData.mode = PlayMode.Normal;
+                PData.mode = PlayMode.DAILYREC;
             })
 
         })
@@ -808,6 +810,8 @@ export class Player {
         var player = _this.player;
 
         cover.addEventListener('click', (e) => {
+            console.log(PData.currentPage);
+            console.log(PData.mode);
             e.stopPropagation()
             let page = PData.currentPage
             if (page == PlayerPage.Music) {
@@ -815,9 +819,22 @@ export class Player {
                     let MainPage = <HTMLElement>document.getElementById('content');
                     MainPage.innerHTML = data.toString();
                     _this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');
-                    _this.getSheet(PData.sheet);
+                    switch (PData.mode) {
+                        case PlayMode.DAILYREC: {
+                            _this.loadDailyRecommandedSongs()
+                        }
+                        case PlayMode.Normal: {
+                            console.log("获取歌单Normal")
+                            _this.getSheet(PData.sheet);
+                        }
+                        case PlayMode.FM: {
+                            console.log("获取FM歌单")
+                            _this.getSheet(PData.sheet);
+                        }
+                    }
                     PData.currentPage = PlayerPage.Home;
                 })
+
             } else {
                 this.loadMusicPage();
             }
@@ -886,8 +903,6 @@ export class Player {
                 let title = <HTMLParagraphElement>c.getElementsByTagName('P')[0]
                 title.innerText = title.innerText.split('-')[0]
                 c.addEventListener('click', () => {
-                    PData.mode = PlayMode.Normal;
-
                     // 初始化主播放列表
                     _this.initMainPlaylist()
                     //attachPlaylist()
@@ -1159,19 +1174,21 @@ export class Player {
 
                 // playlist.trackIds 为当前歌单的所有歌曲ID的列表（只包含ID）
                 // 设置player的播放列表长度参数
-                PData.count = data.songCount;
-                // 设置当前播放的歌单名称
-                PData.sheetName = data.name;
-                // 绑定当前歌单创造者
-                PData.sheetCreator = data.creator;
-                // 绑定当前歌单播放数
-                PData.sheetPlayCount = data.playCount;
-                // 绑定当前歌单歌曲数
-                PData.sheetTrackCount = data.songCount;
-                // 绑定当前歌单简介
-                PData.sheetDescription = (data.description == null) ? '单主很懒，没有写简介。' : data.description;
-                // 绑定当前歌单封面
-                PData.sheetCover = data.coverUrl;
+                try {
+                    PData.count = data.songCount;
+                    // 设置当前播放的歌单名称
+                    PData.sheetName = data.name;
+                    // 绑定当前歌单创造者
+                    PData.sheetCreator = data.creator;
+                    // 绑定当前歌单播放数
+                    PData.sheetPlayCount = data.playCount;
+                    // 绑定当前歌单歌曲数
+                    PData.sheetTrackCount = data.songCount;
+                    // 绑定当前歌单简介
+                    PData.sheetDescription = (data.description == null) ? '单主很懒，没有写简介。' : data.description;
+                    // 绑定当前歌单封面
+                    PData.sheetCover = data.coverUrl;
+                }catch(_){};
 
                 // 加载歌单详情框
                 this.loadSheetDetialBox()
@@ -1812,7 +1829,7 @@ export class Player {
             this.loadFM()
         }
 
-        if (PData.mode == PlayMode.Normal) {
+        if (PData.mode == PlayMode.Normal || PData.mode == PlayMode.DAILYREC || PData.mode == PlayMode.HEART) {
             readFile(path.join(__dirname, '../pages/music.html'), (err, data) => {
 
                 document.getElementById('content').innerHTML = data.toString();
@@ -1871,11 +1888,11 @@ export class Player {
                             let ct = parseInt(String(PData.pTime));
                             let currentLine = <HTMLLIElement>document.getElementById('lyric-' + ct)
                             if (currentLine != undefined) {
-                                for (let i=0;i<lyricLines.children.length;i++){
+                                for (let i = 0; i < lyricLines.children.length; i++) {
                                     (<HTMLLIElement>lyricLines.children[i]).style.color = 'ivory';
                                 }
                                 currentLine.style.color = 'coral';
-                            
+
                                 // var prevoisLine = <HTMLLIElement>currentLine.previousElementSibling;
                                 // if (prevoisLine) {
                                 //     prevoisLine.style.color = 'ivory';
