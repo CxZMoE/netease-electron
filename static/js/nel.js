@@ -754,6 +754,10 @@ var Player = /** @class */ (function () {
                             console.log("获取FM歌单");
                             _this.getSheet(PData.sheet);
                         }
+                        case DPlayment_1.PlayMode.HEART: {
+                            console.log("获取心跳歌单");
+                            _this.getHeart();
+                        }
                     }
                     PData.currentPage = DPlayment_1.PlayerPage.Home;
                 });
@@ -772,6 +776,7 @@ var Player = /** @class */ (function () {
             _this.sheetListBox.innerHTML = '';
             // 设置当前歌单为我喜欢的音乐
             PData.sheet = sheetlist[0].id;
+            PData.favorateSheetId = PData.sheet;
             // 设置当前播放的歌单名称
             PData.sheetName = sheetlist[0].name;
             // 获取歌单歌曲列表
@@ -781,14 +786,13 @@ var Player = /** @class */ (function () {
     // 获取心跳模式
     Player.prototype.getHeart = function () {
         var mid = _this.mPlayList[PData.pIndex].id;
-        var sheetid = _this.mPlayListName;
-        var url = "".concat(exports.netease.server, "/playmode/intelligence/list?id=").concat(mid, "&pid=").concat(sheetid, "&cookie=").concat(exports.netease.cookie);
+        var url = "".concat(exports.netease.server, "/playmode/intelligence/list?id=").concat(mid, "&pid=").concat(PData.favorateSheetId, "&cookie=").concat(exports.netease.cookie);
         fetch(url).then(function (res) { return res.json(); }).then(function (data) {
             var heartSheet = data.data;
             // 清空内容
             _this.sheetListBox.innerHTML = '';
             // 设置当前歌单为我喜欢的音乐
-            PData.sheet = sheetid;
+            PData.sheet = PData.favorateSheetId;
             // 设置当前播放的歌单名称
             PData.sheetName = heartSheet[0].songInfo.name;
             _this.mPlayList = heartSheet;
@@ -1009,10 +1013,43 @@ var Player = /** @class */ (function () {
                     // 初始化主播放列表
                     _this.initMainPlaylist();
                 });
+                songInfo = _this.mPlayList[i].songInfo;
+                li.setAttribute('name', songInfo.name);
+                ////console\.log\('['+count+']get one: '+songs[i].name)
+                // 为列表项目绑定封面
+                li.setAttribute('cover', songInfo.al.picUrl);
+                // 为列表项目绑定专辑ID
+                li.setAttribute('albumId', songInfo.al.id);
+                // 为列表项目绑定专辑名称
+                li.setAttribute('albumName', songInfo.al.name);
+                // 为列表项目生成作者字符串
+                var authors = songInfo.ar;
+                var author = '';
+                for (var i_3 = 0; i_3 < authors.length; i_3++) {
+                    if (i_3 == authors.length - 1) {
+                        author += authors[i_3].name;
+                        continue;
+                    }
+                    author += authors[i_3].name + '/';
+                }
+                li.setAttribute('author', author);
+                // 列表项目左侧的歌曲封面
+                var coverLeft = document.createElement('IMG');
+                coverLeft.style.float = 'left';
+                coverLeft.style.width = '35px';
+                coverLeft.style.height = '35px';
+                coverLeft.setAttribute('src', songInfo.al.picUrl);
+                // 列表项目的歌曲名称
+                var p = document.createElement('P');
+                p.innerText = "".concat(i + 1, " ") + songInfo.name + ' - ' + author;
+                li.appendChild(coverLeft);
+                li.appendChild(p);
+                _this.sheetListBox.appendChild(li);
                 _this.sheetListBox.appendChild(li);
             };
+            var songInfo;
             // 遍历所有的歌单ID以执行一些操作
-            for (var i = 0; i < 10; i++) {
+            for (var i = 0; i < _this.mPlayList.length; i++) {
                 _loop_4(i);
             }
             //console\.log\('歌单长度：', _this.mPlayList.length);
@@ -1035,7 +1072,7 @@ var Player = /** @class */ (function () {
                     // 为列表项目绑定专辑名称
                     list.children.items('i').setAttribute('albumName', songs[i].al.name)
              */
-            _this.bindListItemName(_this.currentOffset, 10);
+            // _this.bindListItemName(_this.currentOffset, 10)
             // 歌单界面形成☝
         }
         else {
@@ -1238,12 +1275,12 @@ var Player = /** @class */ (function () {
             var _loop_6 = function (i) {
                 var authors = rcms[i].ar;
                 var author = '';
-                for (var i_3 = 0; i_3 < authors.length; i_3++) {
-                    if (i_3 == authors.length - 1) {
-                        author += authors[i_3].name;
+                for (var i_4 = 0; i_4 < authors.length; i_4++) {
+                    if (i_4 == authors.length - 1) {
+                        author += authors[i_4].name;
                         continue;
                     }
-                    author += authors[i_3].name + '/';
+                    author += authors[i_4].name + '/';
                 }
                 //填充主播放列表
                 _this.mPlayList.push({ 'id': rcms[i].id, 'name': rcms[i].name, 'cover': rcms[i].al.picUrl, 'author': author });
@@ -1323,12 +1360,12 @@ var Player = /** @class */ (function () {
                 for (var i = 0; i < fms.length; i++) {
                     var authors = fms[i].artists;
                     var author = '';
-                    for (var i_4 = 0; i_4 < authors.length; i_4++) {
-                        if (i_4 == authors.length - 1) {
-                            author += authors[i_4].name;
+                    for (var i_5 = 0; i_5 < authors.length; i_5++) {
+                        if (i_5 == authors.length - 1) {
+                            author += authors[i_5].name;
                             continue;
                         }
-                        author += authors[i_4].name + '/';
+                        author += authors[i_5].name + '/';
                     }
                     _this.mPlayList.push({ 'id': fms[i].id, 'name': fms[i].name, 'cover': fms[i].album.picUrl, 'author': author });
                 }

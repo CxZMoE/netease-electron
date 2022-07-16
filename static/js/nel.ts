@@ -821,15 +821,19 @@ export class Player {
                     _this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');
                     switch (PData.mode) {
                         case PlayMode.DAILYREC: {
-                            _this.loadDailyRecommandedSongs()
+                            _this.loadDailyRecommandedSongs();
                         }
                         case PlayMode.Normal: {
-                            console.log("获取歌单Normal")
+                            console.log("获取歌单Normal");
                             _this.getSheet(PData.sheet);
                         }
                         case PlayMode.FM: {
-                            console.log("获取FM歌单")
+                            console.log("获取FM歌单");
                             _this.getSheet(PData.sheet);
+                        }
+                        case PlayMode.HEART: {
+                            console.log("获取心跳歌单");
+                            _this.getHeart();
                         }
                     }
                     PData.currentPage = PlayerPage.Home;
@@ -853,7 +857,7 @@ export class Player {
 
             // 设置当前歌单为我喜欢的音乐
             PData.sheet = sheetlist[0].id;
-
+            PData.favorateSheetId = PData.sheet;
             // 设置当前播放的歌单名称
             PData.sheetName = sheetlist[0].name;
 
@@ -865,8 +869,7 @@ export class Player {
     // 获取心跳模式
     getHeart() {
         let mid = _this.mPlayList[PData.pIndex].id
-        let sheetid = _this.mPlayListName
-        let url = `${netease.server}/playmode/intelligence/list?id=${mid}&pid=${sheetid}&cookie=${netease.cookie}`
+        let url = `${netease.server}/playmode/intelligence/list?id=${mid}&pid=${PData.favorateSheetId}&cookie=${netease.cookie}`
 
         fetch(url).then(res => res.json()).then(data => {
             let heartSheet = data.data
@@ -874,7 +877,7 @@ export class Player {
             _this.sheetListBox.innerHTML = ''
 
             // 设置当前歌单为我喜欢的音乐
-            PData.sheet = sheetid;
+            PData.sheet = PData.favorateSheetId;
             // 设置当前播放的歌单名称
             PData.sheetName = heartSheet[0].songInfo.name;
             _this.mPlayList = heartSheet;
@@ -1104,7 +1107,7 @@ export class Player {
             PData.sheetPlayCount = 0;
 
             // 遍历所有的歌单ID以执行一些操作
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < _this.mPlayList.length; i++) {
 
                 // 创建一条列表项，每个列表项目对应一首歌
                 let li = <HTMLLIElement>document.createElement('LI')
@@ -1136,7 +1139,48 @@ export class Player {
                     // 初始化主播放列表
                     _this.initMainPlaylist();
                 });
+                var songInfo = <any>_this.mPlayList[i].songInfo;
+                li.setAttribute('name', songInfo.name)
+                ////console\.log\('['+count+']get one: '+songs[i].name)
 
+                // 为列表项目绑定封面
+                li.setAttribute('cover', songInfo.al.picUrl)
+
+                // 为列表项目绑定专辑ID
+                li.setAttribute('albumId', songInfo.al.id)
+
+                // 为列表项目绑定专辑名称
+                li.setAttribute('albumName', songInfo.al.name)
+
+                // 为列表项目生成作者字符串
+                let authors = songInfo.ar
+                let author = ''
+                for (let i = 0; i < authors.length; i++) {
+                    if (i == authors.length - 1) {
+                        author += authors[i].name
+                        continue
+                    }
+                    author += authors[i].name + '/'
+                }
+
+                li.setAttribute('author', author)
+
+                // 列表项目左侧的歌曲封面
+                let coverLeft = document.createElement('IMG')
+                coverLeft.style.float = 'left'
+                coverLeft.style.width = '35px'
+                coverLeft.style.height = '35px'
+                coverLeft.setAttribute('src', songInfo.al.picUrl)
+
+
+                // 列表项目的歌曲名称
+                let p = document.createElement('P')
+                p.innerText = `${i + 1} ` + songInfo.name + ' - ' + author
+                li.appendChild(coverLeft)
+                li.appendChild(p)
+
+
+                _this.sheetListBox.appendChild(li)
                 _this.sheetListBox.appendChild(li);
             }
 
@@ -1162,7 +1206,7 @@ export class Player {
                     // 为列表项目绑定专辑名称
                     list.children.items('i').setAttribute('albumName', songs[i].al.name)
              */
-            _this.bindListItemName(_this.currentOffset, 10)
+            // _this.bindListItemName(_this.currentOffset, 10)
 
             // 歌单界面形成☝
         } else {
@@ -1188,7 +1232,7 @@ export class Player {
                     PData.sheetDescription = (data.description == null) ? '单主很懒，没有写简介。' : data.description;
                     // 绑定当前歌单封面
                     PData.sheetCover = data.coverUrl;
-                }catch(_){};
+                } catch (_) { };
 
                 // 加载歌单详情框
                 this.loadSheetDetialBox()

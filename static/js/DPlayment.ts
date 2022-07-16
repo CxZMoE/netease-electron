@@ -26,6 +26,8 @@ export class PlayerElementAttribute {
 
     element: HTMLAudioElement // 绑定元素
     pLength: number // 播放长度
+
+    favorateSheetId: string // 我喜欢的音乐歌单的PID
     constructor(e) {
         this.element = e;
         // 播放进度
