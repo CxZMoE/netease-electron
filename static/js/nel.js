@@ -745,18 +745,22 @@ var Player = /** @class */ (function () {
                     switch (PData.mode) {
                         case DPlayment_1.PlayMode.DAILYREC: {
                             _this.loadDailyRecommandedSongs();
+                            break;
                         }
                         case DPlayment_1.PlayMode.Normal: {
                             console.log("获取歌单Normal");
                             _this.getSheet(PData.sheet);
+                            break;
                         }
                         case DPlayment_1.PlayMode.FM: {
                             console.log("获取FM歌单");
                             _this.getSheet(PData.sheet);
+                            break;
                         }
                         case DPlayment_1.PlayMode.HEART: {
                             console.log("获取心跳歌单");
                             _this.getHeart();
+                            break;
                         }
                     }
                     PData.currentPage = DPlayment_1.PlayerPage.Home;

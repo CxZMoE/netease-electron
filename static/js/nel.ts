@@ -822,18 +822,22 @@ export class Player {
                     switch (PData.mode) {
                         case PlayMode.DAILYREC: {
                             _this.loadDailyRecommandedSongs();
+                            break;
                         }
                         case PlayMode.Normal: {
                             console.log("获取歌单Normal");
                             _this.getSheet(PData.sheet);
+                            break;
                         }
                         case PlayMode.FM: {
                             console.log("获取FM歌单");
                             _this.getSheet(PData.sheet);
+                            break;
                         }
                         case PlayMode.HEART: {
                             console.log("获取心跳歌单");
                             _this.getHeart();
+                            break;
                         }
                     }
                     PData.currentPage = PlayerPage.Home;
