@@ -220,7 +220,6 @@ var Player = /** @class */ (function () {
             var body = document.getElementsByTagName('body')[0];
             // 创建搜索框结点
             var searchBox = document.createElement('DIV');
-            // <div id='searchBox' class='search-box'>
             searchBox.setAttribute('id', 'searchBox');
             searchBox.className = 'search-box';
             searchBox.innerHTML = data.toString();
@@ -228,41 +227,48 @@ var Player = /** @class */ (function () {
             body.appendChild(searchBox);
             // 搜索事件
             var searchKeywords = document.getElementById('searchKeywords');
-            searchKeywords.addEventListener('input', function (e) {
+            searchKeywords.addEventListener('keydown', function (e) {
                 var target = e.target;
-                fetch("".concat(exports.netease.server, "/search?keywords=").concat(target.value)).then(function (res) {
-                    return res.json();
-                }).then(function (data) {
-                    if (!data) {
-                        return;
-                    }
-                    // 搜索结果数组
-                    var results = data.result.songs;
-                    var resultBox = document.getElementById('searchResultBox');
-                    resultBox.innerHTML = '';
-                    var ul = document.createElement('UL');
-                    ul.className = 'sheet-list-box';
-                    resultBox.appendChild(ul);
-                    var _loop_1 = function (i) {
-                        var li = document.createElement('LI');
-                        li.className = 'sheet-list-item';
-                        // 音乐名称
-                        li.innerText = results[i].name;
-                        // 音乐ID
-                        li.setAttribute('musicID', results[i].id);
-                        li.setAttribute('pIndex', i.toString());
-                        // 添加列表子项
-                        ul.appendChild(li);
-                        li.addEventListener('click', function (e) {
-                            e.stopPropagation();
-                            // 获取音乐详情
-                            fetch("".concat(exports.netease.server, "/song/detail?ids=").concat(li.getAttribute('musicID'))).then(function (res) { return res.json(); }).then(function (data) {
-                                if (!data) {
-                                    return;
-                                }
-                                var song = data.songs[0];
-                                // 封面
-                                li.setAttribute('cover', song.al.picUrl);
+                if (e.keyCode != undefined && e.keyCode == 13) {
+                    fetch("".concat(exports.netease.server, "/search?keywords=").concat(target.value, "&cookie=").concat(exports.netease.cookie)).then(function (res) {
+                        return res.json();
+                    }).then(function (data) {
+                        if (!data) {
+                            return;
+                        }
+                        // 搜索结果数组
+                        var results = data.result.songs;
+                        var ids = [];
+                        var resultBox = document.getElementById('searchResultBox');
+                        resultBox.innerHTML = '';
+                        var ul = document.createElement('UL');
+                        ul.className = 'sheet-list-box';
+                        resultBox.appendChild(ul);
+                        for (var i = 0; i < results.length; i++) {
+                            ids.push(results[i].id);
+                        }
+                        console.log('search for:', ids);
+                        fetch("".concat(exports.netease.server, "/song/detail?ids=").concat(ids.join(","), "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
+                            if (!data) {
+                                return;
+                            }
+                            var _loop_1 = function () {
+                                var song = data.songs[i];
+                                var li = document.createElement('LI');
+                                li.className = 'sheet-list-item';
+                                // 创建图片框
+                                var pic = document.createElement('img');
+                                pic.style.float = 'left';
+                                pic.style.width = '35px';
+                                pic.style.height = '35px';
+                                // 创建标题
+                                var p = document.createElement('p');
+                                li.appendChild(pic);
+                                li.appendChild(p);
+                                // 添加列表子项
+                                ul.appendChild(li);
+                                pic.src = song.al.picUrl;
+                                pic.alt = "";
                                 // 作者
                                 var authors = song.ar;
                                 var author = '';
@@ -273,29 +279,33 @@ var Player = /** @class */ (function () {
                                     }
                                     author += authors[i_1].name + '/';
                                 }
-                                // 获取音乐URL
-                                _this.currentSheet.GetSongUrl(parseInt(li.getAttribute('musicID'))).then(function (musicUrl) {
-                                    var searchItem = [{ 'name': li.innerText, 'id': li.getAttribute('musicID'), 'cover': li.getAttribute('cover'), 'author': author }];
-                                    searchItem.push.apply(searchItem, _this.mPlayList);
-                                    _this.mPlayList = searchItem;
-                                    searchItem = null;
-                                    PData.pIndex = 0;
-                                    PData.src = musicUrl;
-                                    player.play();
-                                    PData.cover = li.getAttribute('cover');
-                                    PData.status = DPlayment_1.PlayStatus.Playing;
-                                    PData.now = li.getAttribute('musicID');
-                                    // 隐藏搜索框
-                                    searchBox.style.height = '0px';
-                                    searchBox.style.visibility = 'hidden';
-                                });
-                            });
+                                p.innerText = "".concat(author, " - ").concat(results[i].name);
+                                li.onclick = function () {
+                                    // 获取音乐URL
+                                    _this.currentSheet.GetSongUrl(song.id).then(function (musicUrl) {
+                                        // 设置播放列表
+                                        var searchItem = [{ 'name': song.name, 'id': song.id, 'cover': song.al.picUrl, 'author': author }];
+                                        searchItem.push.apply(searchItem, _this.mPlayList);
+                                        _this.mPlayList = searchItem;
+                                        searchItem = null;
+                                        PData.pIndex = 0;
+                                        PData.src = musicUrl;
+                                        player.play();
+                                        PData.cover = song.al.picUrl;
+                                        PData.status = DPlayment_1.PlayStatus.Playing;
+                                        PData.now = song.id;
+                                        // 隐藏搜索框
+                                        searchBox.style.height = '0px';
+                                        searchBox.style.visibility = 'hidden';
+                                    });
+                                };
+                            };
+                            for (var i = 0; i < data.songs.length; i++) {
+                                _loop_1();
+                            }
                         });
-                    };
-                    for (var i = 0; i < results.length; i++) {
-                        _loop_1(i);
-                    }
-                });
+                    });
+                }
             });
         });
         // 事先加载主页
@@ -521,7 +531,7 @@ var Player = /** @class */ (function () {
         player.addEventListener('canplay', function () {
             PData.pLength = player.duration;
             // 更新封面
-            PData.cover = _this.mPlayList[PData.pIndex].cover;
+            //PData.cover = _this.mPlayList[PData.pIndex].cover
             document.getElementById('musicTitle').innerText = '正在播放：' + _this.mPlayList[PData.pIndex].name; //+ ' - ' + mPlayList[PData.pIndex].author
             // 显示歌词
             clearInterval(_this_1.lyricInterval);
@@ -822,13 +832,14 @@ var Player = /** @class */ (function () {
                 c.addEventListener('click', function () {
                     // 初始化主播放列表
                     _this.initMainPlaylist();
-                    //attachPlaylist()
                     // 设置上次播放的歌曲ID
                     PData.last = PData.now;
                     // 设置上次播放的序号
                     PData.lIndex = PData.pIndex;
                     // 设置当前播放的index
-                    PData.pIndex = parseInt(c.getAttribute('pIndex'));
+                    PData.pIndex = i;
+                    // 设置歌曲封面
+                    PData.cover = _this.mPlayList[i].cover;
                     // 获取歌曲播放Url
                     _this.sourceMusicUrl(c);
                     _this_1.playList.scrollTop = (_this_1.playList.children.item(PData.pIndex)).offsetTop - 25;
@@ -875,6 +886,7 @@ var Player = /** @class */ (function () {
                     PData.pIndex = parseInt(li.getAttribute('pIndex'));
                     // 设置当前播放的歌单名称
                     PData.sheetName = _this_1.currentSheet.name;
+                    PData.cover = songs[i].al.picUrl;
                     // 为播放器绑定播放地址，并开始播放
                     _this.sourceMusicUrl(li);
                     //initMainPlaylist()
@@ -1155,6 +1167,7 @@ var Player = /** @class */ (function () {
             });
         }
     };
+    // 使用当前的播放列表DOM元素初始化数据列表
     Player.prototype.initMainPlaylist = function () {
         var list = _this.playList;
         // 生成主播放列表（播放后切换到这个歌单）

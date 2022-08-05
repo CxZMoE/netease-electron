@@ -6,7 +6,7 @@ button{
 .dialog-box {
     position: absolute;
     border-radius: 5px;
-
+    
     height: fit-content;
     width: 350px;
     user-select: none;

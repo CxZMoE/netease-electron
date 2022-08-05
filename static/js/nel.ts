@@ -220,7 +220,8 @@ export class Player {
 
             // 创建搜索框结点
             let searchBox = <HTMLDivElement>document.createElement('DIV');
-            // <div id='searchBox' class='search-box'>
+
+
             searchBox.setAttribute('id', 'searchBox');
             searchBox.className = 'search-box';
             searchBox.innerHTML = data.toString();
@@ -229,47 +230,51 @@ export class Player {
 
             // 搜索事件
             let searchKeywords = document.getElementById('searchKeywords')
-            searchKeywords.addEventListener('input', (e) => {
+            searchKeywords.addEventListener('keydown', (e) => {
                 let target = <HTMLInputElement>e.target;
-                fetch(`${netease.server}/search?keywords=${target.value}`).then((res) => {
-                    return res.json()
-                }).then((data) => {
-                    if (!data) {
-                        return
-                    }
+                if (e.keyCode != undefined && e.keyCode == 13) {
+                    fetch(`${netease.server}/search?keywords=${target.value}&cookie=${netease.cookie}`).then((res) => {
+                        return res.json()
+                    }).then((data) => {
+                        if (!data) {
+                            return
+                        }
 
-                    // 搜索结果数组
-                    let results = data.result.songs
-                    let resultBox = document.getElementById('searchResultBox')
-                    resultBox.innerHTML = ''
-                    let ul = document.createElement('UL')
-                    ul.className = 'sheet-list-box'
-                    resultBox.appendChild(ul)
-                    for (let i = 0; i < results.length; i++) {
-                        let li = <HTMLLIElement>document.createElement('LI')
-                        li.className = 'sheet-list-item'
-                        // 音乐名称
-                        li.innerText = results[i].name
-                        // 音乐ID
-                        li.setAttribute('musicID', results[i].id)
+                        // 搜索结果数组
+                        let results = data.result.songs
+                        let ids = []
+                        let resultBox = document.getElementById('searchResultBox')
+                        resultBox.innerHTML = ''
+                        let ul = document.createElement('UL')
+                        ul.className = 'sheet-list-box'
+                        resultBox.appendChild(ul)
+                        for (var i=0;i<results.length;i++){
+                            ids.push(results[i].id)
+                        }
+                        console.log('search for:', ids)
+                        fetch(`${netease.server}/song/detail?ids=${ids.join(",")}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+                            if (!data) {
+                                return
+                            }
+                            for (var i = 0; i < data.songs.length; i++) {
+                                let song = data.songs[i]
+                                let li = <HTMLLIElement>document.createElement('LI')
+                                li.className = 'sheet-list-item'
+                                // 创建图片框
+                                let pic = <HTMLImageElement>document.createElement('img')
+                                pic.style.float = 'left'
+                                pic.style.width = '35px'
+                                pic.style.height = '35px'
+                                // 创建标题
+                                let p = <HTMLParagraphElement>document.createElement('p')
 
+                                li.appendChild(pic)
+                                li.appendChild(p)
+                                // 添加列表子项
+                                ul.appendChild(li)
 
-                        li.setAttribute('pIndex', i.toString())
-
-                        // 添加列表子项
-                        ul.appendChild(li)
-                        li.addEventListener('click', (e) => {
-                            e.stopPropagation()
-                            // 获取音乐详情
-                            fetch(`${netease.server}/song/detail?ids=${li.getAttribute('musicID')}`).then(res => res.json()).then(data => {
-                                if (!data) {
-                                    return
-                                }
-                                let song = data.songs[0]
-                                // 封面
-                                li.setAttribute('cover', song.al.picUrl)
-
-
+                                pic.src = song.al.picUrl
+                                pic.alt = ""
                                 // 作者
                                 let authors = song.ar
                                 let author = ''
@@ -280,32 +285,37 @@ export class Player {
                                     }
                                     author += authors[i].name + '/'
                                 }
+                                p.innerText = `${author} - ${results[i].name}`
+                                li.onclick = function () {
+                                    // 获取音乐URL
+                                    _this.currentSheet.GetSongUrl(song.id).then(
+                                        musicUrl => {
+                                            // 设置播放列表
+                                            let searchItem = [{'name': song.name, 'id': song.id, 'cover': song.al.picUrl, 'author': author }]
 
-                                // 获取音乐URL
-                                _this.currentSheet.GetSongUrl(parseInt(li.getAttribute('musicID'))).then(
-                                    musicUrl => {
-                                        let searchItem = [{ 'name': li.innerText, 'id': li.getAttribute('musicID'), 'cover': li.getAttribute('cover'), 'author': author }]
+                                            searchItem.push.apply(searchItem, _this.mPlayList)
+                                            _this.mPlayList = searchItem
+                                            searchItem = null
 
-                                        searchItem.push.apply(searchItem, _this.mPlayList)
-                                        _this.mPlayList = searchItem
-                                        searchItem = null
+                                            PData.pIndex = 0;
+                                            PData.src = musicUrl;
+                                            player.play();
+                                            PData.cover = song.al.picUrl;
+                                            PData.status = PlayStatus.Playing;
+                                            PData.now = song.id;
 
-                                        PData.pIndex = 0;
-                                        PData.src = musicUrl;
-                                        player.play();
-                                        PData.cover = li.getAttribute('cover');
-                                        PData.status = PlayStatus.Playing;
-                                        PData.now = li.getAttribute('musicID');
+                                            // 隐藏搜索框
+                                            searchBox.style.height = '0px'
+                                            searchBox.style.visibility = 'hidden'
+                                        }
+                                    )
+                                }
+                            }
 
-                                        // 隐藏搜索框
-                                        searchBox.style.height = '0px'
-                                        searchBox.style.visibility = 'hidden'
-                                    }
-                                )
-                            })
-                        })
-                    }
-                })
+                        });
+                    })
+                }
+
             })
         })
 
@@ -560,7 +570,7 @@ export class Player {
             PData.pLength = player.duration;
 
             // 更新封面
-            PData.cover = _this.mPlayList[PData.pIndex].cover
+            //PData.cover = _this.mPlayList[PData.pIndex].cover
 
             document.getElementById('musicTitle').innerText = '正在播放：' + _this.mPlayList[PData.pIndex].name //+ ' - ' + mPlayList[PData.pIndex].author
 
@@ -914,14 +924,15 @@ export class Player {
                 c.addEventListener('click', () => {
                     // 初始化主播放列表
                     _this.initMainPlaylist()
-                    //attachPlaylist()
+
                     // 设置上次播放的歌曲ID
                     PData.last = PData.now;
                     // 设置上次播放的序号
                     PData.lIndex = PData.pIndex;
-
                     // 设置当前播放的index
-                    PData.pIndex = parseInt(c.getAttribute('pIndex'));
+                    PData.pIndex = i;
+                    // 设置歌曲封面
+                    PData.cover = _this.mPlayList[i].cover
 
                     // 获取歌曲播放Url
                     _this.sourceMusicUrl(c)
@@ -975,6 +986,7 @@ export class Player {
 
                     // 设置当前播放的歌单名称
                     PData.sheetName = this.currentSheet.name;
+                    PData.cover = songs[i].al.picUrl;
                     // 为播放器绑定播放地址，并开始播放
                     _this.sourceMusicUrl(li)
                     //initMainPlaylist()
@@ -1283,7 +1295,7 @@ export class Player {
         }
 
     }
-
+    // 使用当前的播放列表DOM元素初始化数据列表
     initMainPlaylist() {
         let list = _this.playList;
         // 生成主播放列表（播放后切换到这个歌单）
@@ -1881,9 +1893,9 @@ export class Player {
                 console.log(__dirname)
                 console.log(`${__dirname}/${PData.name}.${PData.src.split('.').slice(-1)}`)
                 try {
-                    (async () =>{
+                    (async () => {
                         var downloadDir = `${USR_CONFIG_DIR}\\download`
-                        if (!fs.existsSync(downloadDir)){
+                        if (!fs.existsSync(downloadDir)) {
                             fs.mkdirSync(downloadDir, '0755')
                         }
                         var file = fs.createWriteStream(`${downloadDir}\\${PData.name}.${PData.src.split('.').slice(-1)}`)
@@ -1892,13 +1904,13 @@ export class Player {
                             file.on('finish', () => {
                                 file.close()
                                 console.log('download file finished')
-                                dialog.createDialog("dwnfinished", "通知", 300,300, "下载歌曲完毕");
+                                dialog.createDialog("dwnfinished", "通知", 300, 300, "下载歌曲完毕");
                             })
                         })
                         request.on('error', function (err) {
                             file.unlink()
                             console.log('error', err)
-                            dialog.createDialog("dwnfinished", "通知", 300,300, `下载歌曲失败: ${err}`);
+                            dialog.createDialog("dwnfinished", "通知", 300, 300, `下载歌曲失败: ${err}`);
                         })
                     })()
                 } catch (ex) {

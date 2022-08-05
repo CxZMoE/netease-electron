@@ -93,7 +93,7 @@ var SheetDetial = /** @class */ (function () {
                             var lyric = data.lrc.lyric;
                             ////console.log(lyric)
                             var lines = lyric.split("\n");
-                            if (data.lrc.version == 6 || data.lrc.version == 5) {
+                            if (data.lrc.version == 5) {
                                 console.log(lines);
                                 for (var i = 0; i < lines.length; i++) {
                                     lyric_cuts[i] = { "time": 0, "content": lines[i] };
