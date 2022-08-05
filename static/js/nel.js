@@ -1024,6 +1024,7 @@ var Player = /** @class */ (function () {
                     PData.pIndex = parseInt(li.getAttribute('pIndex'));
                     // 设置当前播放的歌单名称
                     PData.sheetName = '心动模式歌单';
+                    PData.cover = _this.mPlayList[i].songInfo.al.picUrl;
                     // 为播放器绑定播放地址，并开始播放
                     _this.sourceMusicUrl(li);
                     //initMainPlaylist()
