@@ -41,6 +41,7 @@ var remote = require("@electron/remote");
 var fs = remote.require('fs');
 var readFile = remote.require('fs').readFile;
 var path = remote.require('path');
+var http = remote.require('http');
 var log_1 = require("./log"); // 调试用
 var netease_1 = require("./netease");
 var dialog_1 = require("./dialog");
@@ -1377,6 +1378,7 @@ var Player = /** @class */ (function () {
                 PData.pIndex = 0;
                 PData.now = fms[0].id;
                 PData.cover = fms[0].album.picUrl;
+                PData.name = fms[0].name;
                 // 获取播放地址
                 netease.getMusicUrl(PData.now, function (musicUrl) {
                     _this.firstLoad = false;
@@ -1398,6 +1400,7 @@ var Player = /** @class */ (function () {
                     _this.loadCollectBtn();
                     // 加载开始评论按钮
                     _this.loadAddcommentBtn();
+                    _this.loadDownloadBtn();
                 });
             }, _this_1.loadMusicPage);
         });
@@ -1654,6 +1657,48 @@ var Player = /** @class */ (function () {
             commentTextBox.focus();
         });
     };
+    Player.prototype.loadDownloadBtn = function () {
+        var _this_1 = this;
+        var downloadBtn = document.getElementById("downloadBtn");
+        if (downloadBtn) {
+            // downloadBtn.href = PData.src
+            // downloadBtn.setAttribute('download', `${PData.name}.${PData.src.split('.').slice(-1)}`)
+            downloadBtn.onclick = function (e) {
+                e.stopPropagation();
+                console.log(__dirname);
+                console.log("".concat(__dirname, "/").concat(PData.name, ".").concat(PData.src.split('.').slice(-1)));
+                try {
+                    (function () { return __awaiter(_this_1, void 0, void 0, function () {
+                        var downloadDir, file, request;
+                        return __generator(this, function (_a) {
+                            downloadDir = "".concat(exports.USR_CONFIG_DIR, "\\download");
+                            if (!fs.existsSync(downloadDir)) {
+                                fs.mkdirSync(downloadDir, '0755');
+                            }
+                            file = fs.createWriteStream("".concat(downloadDir, "\\").concat(PData.name, ".").concat(PData.src.split('.').slice(-1)));
+                            request = http.get(PData.src, function (response) {
+                                response.pipe(file);
+                                file.on('finish', function () {
+                                    file.close();
+                                    console.log('download file finished');
+                                    dialog.createDialog("dwnfinished", "通知", 300, 300, "下载歌曲完毕");
+                                });
+                            });
+                            request.on('error', function (err) {
+                                file.unlink();
+                                console.log('error', err);
+                                dialog.createDialog("dwnfinished", "通知", 300, 300, "\u4E0B\u8F7D\u6B4C\u66F2\u5931\u8D25: ".concat(err));
+                            });
+                            return [2 /*return*/];
+                        });
+                    }); })();
+                }
+                catch (ex) {
+                    console.log(ex);
+                }
+            };
+        }
+    };
     Player.prototype.loadMusicPage = function () {
         //console\.log\('load music page', PData.mode)
         // FM模式设置
@@ -1678,6 +1723,8 @@ var Player = /** @class */ (function () {
                 _this.loadCollectBtn();
                 // 加载开始评论按钮
                 _this.loadAddcommentBtn();
+                // 加载下载按钮
+                _this.loadDownloadBtn();
                 // 评论
                 _this.loadComment(1, 25);
             });

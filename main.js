@@ -6,9 +6,9 @@
 const { app, BrowserWindow, Tray,Menu } = require('electron')
 const process = require('child_process')
 require('@electron/remote/main').initialize()
-try{
-    require('electron-reloader')(module)
-}catch(_){}
+// try{
+//     require('electron-reloader')(module)
+// }catch(_){}
 
 // 启动api
 

@@ -9,7 +9,8 @@ var Dialog = /** @class */ (function () {
         // 创建对话框
         this.createDialog = function (id, title, width, height, content) {
             var _this = this;
-            readFile("./static/pages/dialog.html", function (err, data) {
+            readFile("".concat(__dirname, "\\..\\pages\\dialog.html"), function (err, data) {
+                console.log(__dirname);
                 // body
                 var m = document.getElementsByTagName("body")[0];
                 // 外层div

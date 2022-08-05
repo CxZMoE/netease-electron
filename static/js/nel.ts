@@ -2,6 +2,8 @@ import * as remote from '@electron/remote';
 const fs = remote.require('fs');
 const { readFile } = remote.require('fs');
 const path = remote.require('path');
+const http = remote.require('http')
+
 import log from './log'; // 调试用
 import Netease from './netease';
 import Dialog from './dialog';
@@ -1547,7 +1549,7 @@ export class Player {
                     PData.pIndex = 0;
                     PData.now = fms[0].id;
                     PData.cover = fms[0].album.picUrl;
-
+                    PData.name = fms[0].name
                     // 获取播放地址
                     netease.getMusicUrl(PData.now, function (musicUrl) {
                         _this.firstLoad = false
@@ -1572,6 +1574,7 @@ export class Player {
                         _this.loadCollectBtn();
                         // 加载开始评论按钮
                         _this.loadAddcommentBtn();
+                        _this.loadDownloadBtn()
                     })
                 },
                 this.loadMusicPage
@@ -1868,7 +1871,42 @@ export class Player {
 
         })
     }
-
+    loadDownloadBtn() {
+        var downloadBtn = <HTMLLinkElement>document.getElementById("downloadBtn")
+        if (downloadBtn) {
+            // downloadBtn.href = PData.src
+            // downloadBtn.setAttribute('download', `${PData.name}.${PData.src.split('.').slice(-1)}`)
+            downloadBtn.onclick = (e) => {
+                e.stopPropagation()
+                console.log(__dirname)
+                console.log(`${__dirname}/${PData.name}.${PData.src.split('.').slice(-1)}`)
+                try {
+                    (async () =>{
+                        var downloadDir = `${USR_CONFIG_DIR}\\download`
+                        if (!fs.existsSync(downloadDir)){
+                            fs.mkdirSync(downloadDir, '0755')
+                        }
+                        var file = fs.createWriteStream(`${downloadDir}\\${PData.name}.${PData.src.split('.').slice(-1)}`)
+                        var request = http.get(PData.src, (response) => {
+                            response.pipe(file)
+                            file.on('finish', () => {
+                                file.close()
+                                console.log('download file finished')
+                                dialog.createDialog("dwnfinished", "通知", 300,300, "下载歌曲完毕");
+                            })
+                        })
+                        request.on('error', function (err) {
+                            file.unlink()
+                            console.log('error', err)
+                            dialog.createDialog("dwnfinished", "通知", 300,300, `下载歌曲失败: ${err}`);
+                        })
+                    })()
+                } catch (ex) {
+                    console.log(ex)
+                }
+            }
+        }
+    }
     loadMusicPage() {
 
         //console\.log\('load music page', PData.mode)
@@ -1898,6 +1936,8 @@ export class Player {
                 _this.loadCollectBtn()
                 // 加载开始评论按钮
                 _this.loadAddcommentBtn()
+                // 加载下载按钮
+                _this.loadDownloadBtn()
                 // 评论
                 _this.loadComment(1, 25)
             })

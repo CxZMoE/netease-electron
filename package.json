@@ -4,7 +4,7 @@
   "description": "A gui implement of NeteaseApi.",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "tsc && electron .",
     "prestart": "tsc",
     "test": "electron .",
     "build": "tsc && electron-builder --windows nsis:ia32"

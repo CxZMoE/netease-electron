@@ -12,7 +12,8 @@ class Dialog {
 
     // 创建对话框
     createDialog = function (id, title, width, height, content) {
-        readFile(`./static/pages/dialog.html`, (err, data) => {
+        readFile(`${__dirname}\\..\\pages\\dialog.html`, (err, data) => {
+            console.log(__dirname)
             // body
             let m = document.getElementsByTagName("body")[0]
             // 外层div
