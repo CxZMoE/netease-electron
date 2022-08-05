@@ -93,32 +93,24 @@ var SheetDetial = /** @class */ (function () {
                             var lyric = data.lrc.lyric;
                             ////console.log(lyric)
                             var lines = lyric.split("\n");
-                            if (data.lrc.version == 5) {
-                                console.log(lines);
-                                for (var i = 0; i < lines.length; i++) {
-                                    lyric_cuts[i] = { "time": 0, "content": lines[i] };
+                            for (var i = 0; i < lines.length; i++) {
+                                var line = lines[i];
+                                var lineSplt = line.split(']');
+                                if (line.length < 2) {
+                                    continue;
                                 }
-                            }
-                            else {
-                                for (var i = 0; i < lines.length; i++) {
-                                    var line = lines[i];
-                                    var lineSplt = line.split(']');
-                                    if (line.length < 2) {
-                                        continue;
-                                    }
-                                    var timeBase = lineSplt[0].slice(1).split('.')[0];
-                                    // 毫秒级定位
-                                    // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                                    var timeMinute = timeBase.split(":")[0];
-                                    var timeSecond = timeBase.split(":")[1];
-                                    var time = Number(timeMinute) * 60 + Number(timeSecond);
-                                    var content = lineSplt[1];
-                                    if (content == undefined) {
-                                        content = line;
-                                    }
-                                    // 添加歌词行
-                                    lyric_cuts[i] = { "time": time, "content": content };
+                                var timeBase = lineSplt[0].slice(1).split('.')[0];
+                                // 毫秒级定位
+                                // let timeExtra = lineSplt[0].slice(1).split('.')[1]
+                                var timeMinute = timeBase.split(":")[0];
+                                var timeSecond = timeBase.split(":")[1];
+                                var time = Number(timeMinute) * 60 + Number(timeSecond);
+                                var content = lineSplt[1];
+                                if (content == undefined) {
+                                    content = line;
                                 }
+                                // 添加歌词行
+                                lyric_cuts[i] = { "time": time, "content": content };
                             }
                         }
                         return lyric_cuts;

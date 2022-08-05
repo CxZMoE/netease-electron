@@ -60,33 +60,25 @@ export class SheetDetial {
                 let lyric = data.lrc.lyric
                 ////console.log(lyric)
                 let lines = lyric.split("\n")
-                if (data.lrc.version == 5) {
-                    console.log(lines);
-                    for (let i = 0; i < lines.length; i++) {
-                        lyric_cuts[i] = { "time": 0, "content": lines[i] };
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i]
+                    let lineSplt = line.split(']')
+                    if (line.length < 2) {
+                        continue
                     }
-                } else {
-                    for (let i = 0; i < lines.length; i++) {
-                        let line = lines[i]
-                        let lineSplt = line.split(']')
-                        if (line.length < 2) {
-                            continue
-                        }
-                        let timeBase = lineSplt[0].slice(1).split('.')[0]
-                        // 毫秒级定位
-                        // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                        let timeMinute = timeBase.split(":")[0]
-                        let timeSecond = timeBase.split(":")[1]
-                        let time = Number(timeMinute) * 60 + Number(timeSecond)
-                        let content = lineSplt[1]
-                        if (content == undefined){
-                            content = line;
-                        }
-                        // 添加歌词行
-                        lyric_cuts[i] = { "time": time, "content": content }
+                    let timeBase = lineSplt[0].slice(1).split('.')[0]
+                    // 毫秒级定位
+                    // let timeExtra = lineSplt[0].slice(1).split('.')[1]
+                    let timeMinute = timeBase.split(":")[0]
+                    let timeSecond = timeBase.split(":")[1]
+                    let time = Number(timeMinute) * 60 + Number(timeSecond)
+                    let content = lineSplt[1]
+                    if (content == undefined){
+                        content = line;
                     }
+                    // 添加歌词行
+                    lyric_cuts[i] = { "time": time, "content": content }
                 }
-                
                 
 
 
