@@ -141,6 +141,7 @@
         cursor: pointer;
         transition: ease-in-out 0.2s;
         border-radius: 5px;
+        overflow: hidden;
     }
 
     .sheet-list-item>img {
@@ -148,8 +149,8 @@
     }
 
     .sheet-list-item>p {
-
-        padding-left: 55px;
+        overflow: hidden;
+        padding-left: 15px;
     }
 
     .sheet-list-item:hover {
@@ -185,6 +186,8 @@
     .music-title {
         margin-left: auto;
         margin-right: 10px;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
     .playbar {
@@ -382,6 +385,14 @@
         text-align: center;
         line-height: 20px;
         margin: 6px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+    }
+    .music-control-button>img{
+        height: 15px;
+        width: 15px;
     }
 
     .music-control-button:hover {
@@ -491,11 +502,22 @@
     /* Comments */
 
     .comment-line {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
         margin: 5px;
         padding: 5px;
         background-color: #303030;
         color: ivory;
         border-radius: 5px;
+    }
+
+    .comment-user-img {
+        height: 35px;
+        width: 35px;
+        border-radius: 5px;
+        float: left;
     }
 
     .comment-label-mute {

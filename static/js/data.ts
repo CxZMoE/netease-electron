@@ -79,10 +79,11 @@ export class SheetDetial {
                         let timeSecond = timeBase.split(":")[1]
                         let time = Number(timeMinute) * 60 + Number(timeSecond)
                         let content = lineSplt[1]
-    
+                        if (content == undefined){
+                            content = line;
+                        }
                         // 添加歌词行
                         lyric_cuts[i] = { "time": time, "content": content }
-    
                     }
                 }
                 

@@ -113,6 +113,9 @@ var SheetDetial = /** @class */ (function () {
                                     var timeSecond = timeBase.split(":")[1];
                                     var time = Number(timeMinute) * 60 + Number(timeSecond);
                                     var content = lineSplt[1];
+                                    if (content == undefined) {
+                                        content = line;
+                                    }
                                     // 添加歌词行
                                     lyric_cuts[i] = { "time": time, "content": content };
                                 }

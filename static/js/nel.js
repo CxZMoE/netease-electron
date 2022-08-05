@@ -926,7 +926,8 @@ var Player = /** @class */ (function () {
                 coverLeft.setAttribute('src', songs[index].al.picUrl);
                 // 列表项目的歌曲名称
                 var p = document.createElement('P');
-                p.innerText = "".concat(i + 1, " ") + songs[index].name + ' - ' + author;
+                // p.innerText = `${i + 1} ` + songs[index].name + ' - ' + author
+                p.innerText = songs[index].name + ' - ' + author;
                 li.appendChild(coverLeft);
                 li.appendChild(p);
                 _this.sheetListBox.appendChild(li);
@@ -1426,8 +1427,10 @@ var Player = /** @class */ (function () {
         }
         var musicPanelBottom = document.getElementById('musicPanelBottom');
         fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
-            var hot = data.hotComments;
-            var normal = data.comments;
+            var normal = data.hotComments;
+            if (data.hotComments == undefined || data.hotComments.length == 0) {
+                normal = data.comments;
+            }
             // musicPanelBottom.innerHTML = ''
             // let hotcommentList = document.createElement('UL')
             // hotcommentList.setAttribute('id', 'hotcommentList')
@@ -1458,14 +1461,26 @@ var Player = /** @class */ (function () {
                 var li = document.createElement('LI');
                 //li.classList.add('comment-line')
                 var contentDiv = document.createElement('DIV');
-                contentDiv.innerText = content;
                 contentDiv.classList.add('comment-line');
                 contentDiv.classList.add('light-dark');
                 var userP = document.createElement('DIV');
                 userP.classList.add('comment-label-mute');
                 userP.innerText = user;
+                userP.style.flexGrow = '1';
+                userP.style.whiteSpace = 'nowrap';
+                var userImg = document.createElement('img');
+                userImg.classList.add('comment-user-img');
+                userImg.src = normal[i].user.avatarUrl;
+                var contentP = document.createElement('p');
+                contentP.innerHTML = content;
+                contentP.style.padding = "0 15px";
+                contentDiv.appendChild(userImg);
+                contentDiv.appendChild(contentP);
                 contentDiv.appendChild(userP);
                 li.appendChild(contentDiv);
+                // console.log(normal[i].user.avatarUrl)
+                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
+                // contentDiv.style.backgroundSize = 'cover'
                 normalcommentList.appendChild(li);
             }
             // 上一页/下一页 评论
@@ -1503,12 +1518,12 @@ var Player = /** @class */ (function () {
                                 var li = document.createElement('LI');
                                 //li.classList.add('comment-line')
                                 var contentDiv = document.createElement('DIV');
-                                contentDiv.innerText = content;
+                                contentDiv.innerHTML = content;
                                 contentDiv.classList.add('comment-line');
                                 contentDiv.classList.add('light-dark');
                                 var userP = document.createElement('DIV');
                                 userP.classList.add('comment-label-mute');
-                                userP.innerText = user;
+                                userP.innerHTML = user;
                                 contentDiv.appendChild(userP);
                                 li.appendChild(contentDiv);
                                 normalcommentList.appendChild(li);
@@ -1532,7 +1547,10 @@ var Player = /** @class */ (function () {
                     //////console\.log\(normalcommentList.getAttribute('page'))
                     //////console\.log\(page)
                     fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
-                        var normal = data.comments;
+                        var normal = data.hotComments;
+                        if (data.hotComments == undefined || data.hotComments.length == 0) {
+                            normal = data.comments;
+                        }
                         //////console\.log\(str)
                         if (normal != undefined) {
                             // normalcommentList.innerHTML = ''
@@ -1542,16 +1560,27 @@ var Player = /** @class */ (function () {
                                 var li = document.createElement('LI');
                                 //li.classList.add('comment-line')
                                 var contentDiv = document.createElement('DIV');
-                                contentDiv.innerText = content;
                                 contentDiv.classList.add('comment-line');
                                 contentDiv.classList.add('light-dark');
                                 var userP = document.createElement('DIV');
                                 userP.classList.add('comment-label-mute');
                                 userP.innerText = user;
+                                userP.style.flexGrow = '1';
+                                userP.style.whiteSpace = 'nowrap';
+                                var userImg = document.createElement('img');
+                                userImg.classList.add('comment-user-img');
+                                userImg.src = normal[i].user.avatarUrl;
+                                var contentP = document.createElement('p');
+                                contentP.innerHTML = content;
+                                contentP.style.padding = "0 15px";
+                                contentDiv.appendChild(userImg);
+                                contentDiv.appendChild(contentP);
                                 contentDiv.appendChild(userP);
                                 li.appendChild(contentDiv);
+                                // console.log(normal[i].user.avatarUrl)
+                                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
+                                // contentDiv.style.backgroundSize = 'cover'
                                 normalcommentList.appendChild(li);
-                                normalcommentList.scrollTop = 0;
                             }
                         }
                     });

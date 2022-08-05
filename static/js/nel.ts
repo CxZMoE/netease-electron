@@ -248,7 +248,7 @@ export class Player {
                         let ul = document.createElement('UL')
                         ul.className = 'sheet-list-box'
                         resultBox.appendChild(ul)
-                        for (var i=0;i<results.length;i++){
+                        for (var i = 0; i < results.length; i++) {
                             ids.push(results[i].id)
                         }
                         console.log('search for:', ids)
@@ -291,7 +291,7 @@ export class Player {
                                     _this.currentSheet.GetSongUrl(song.id).then(
                                         musicUrl => {
                                             // 设置播放列表
-                                            let searchItem = [{'name': song.name, 'id': song.id, 'cover': song.al.picUrl, 'author': author }]
+                                            let searchItem = [{ 'name': song.name, 'id': song.id, 'cover': song.al.picUrl, 'author': author }]
 
                                             searchItem.push.apply(searchItem, _this.mPlayList)
                                             _this.mPlayList = searchItem
@@ -1035,7 +1035,8 @@ export class Player {
 
                 // 列表项目的歌曲名称
                 let p = document.createElement('P')
-                p.innerText = `${i + 1} ` + songs[index].name + ' - ' + author
+                // p.innerText = `${i + 1} ` + songs[index].name + ' - ' + author
+                p.innerText = songs[index].name + ' - ' + author
                 li.appendChild(coverLeft)
                 li.appendChild(p)
 
@@ -1604,8 +1605,11 @@ export class Player {
         let musicPanelBottom = document.getElementById('musicPanelBottom')
 
         fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-            let hot = data.hotComments
-            let normal = data.comments
+            let normal = data.hotComments
+            if (data.hotComments == undefined || data.hotComments.length == 0){
+                normal = data.comments
+            }
+            
             // musicPanelBottom.innerHTML = ''
 
             // let hotcommentList = document.createElement('UL')
@@ -1637,23 +1641,38 @@ export class Player {
             // }
 
             for (let i = 0; i < normal.length; i++) {
-                let user = normal[i].user.nickname
-                let content = normal[i].content
-                let li = document.createElement('LI')
+                let user = normal[i].user.nickname;
+                let content = normal[i].content;
+                let li = document.createElement('LI');
 
                 //li.classList.add('comment-line')
-                let contentDiv = document.createElement('DIV')
-                contentDiv.innerText = content
-                contentDiv.classList.add('comment-line')
-                contentDiv.classList.add('light-dark')
-                let userP = document.createElement('DIV')
+                let contentDiv = document.createElement('DIV');
+                contentDiv.classList.add('comment-line');
+                contentDiv.classList.add('light-dark');
+                let userP = document.createElement('DIV');
+                userP.classList.add('comment-label-mute');
+                userP.innerText = user;
+                userP.style.flexGrow = '1';
+                userP.style.whiteSpace = 'nowrap';
 
-                userP.classList.add('comment-label-mute')
-                userP.innerText = user
-                contentDiv.appendChild(userP)
-                li.appendChild(contentDiv)
+                let userImg = document.createElement('img');
+                userImg.classList.add('comment-user-img');
+                userImg.src = normal[i].user.avatarUrl;
 
-                normalcommentList.appendChild(li)
+                let contentP = document.createElement('p');
+                contentP.innerHTML = content;
+                contentP.style.padding = "0 15px";
+
+                contentDiv.appendChild(userImg);
+                contentDiv.appendChild(contentP);
+                contentDiv.appendChild(userP);
+
+
+                li.appendChild(contentDiv);
+                // console.log(normal[i].user.avatarUrl)
+                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
+                // contentDiv.style.backgroundSize = 'cover'
+                normalcommentList.appendChild(li);
             }
 
             // 上一页/下一页 评论
@@ -1696,13 +1715,13 @@ export class Player {
 
                                 //li.classList.add('comment-line')
                                 let contentDiv = document.createElement('DIV')
-                                contentDiv.innerText = content
+                                contentDiv.innerHTML = content
                                 contentDiv.classList.add('comment-line')
                                 contentDiv.classList.add('light-dark')
                                 let userP = document.createElement('DIV')
 
                                 userP.classList.add('comment-label-mute')
-                                userP.innerText = user
+                                userP.innerHTML = user
                                 contentDiv.appendChild(userP)
                                 li.appendChild(contentDiv)
 
@@ -1731,29 +1750,46 @@ export class Player {
                     //////console\.log\(normalcommentList.getAttribute('page'))
                     //////console\.log\(page)
                     fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-                        let normal = data.comments
+                        let normal = data.hotComments
+                        if (data.hotComments == undefined || data.hotComments.length == 0){
+                            normal = data.comments
+                        }
                         //////console\.log\(str)
                         if (normal != undefined) {
                             // normalcommentList.innerHTML = ''
                             for (let i = 0; i < normal.length; i++) {
-                                let user = normal[i].user.nickname
-                                let content = normal[i].content
-                                let li = document.createElement('LI')
-
+                                let user = normal[i].user.nickname;
+                                let content = normal[i].content;
+                                let li = document.createElement('LI');
+                
                                 //li.classList.add('comment-line')
-                                let contentDiv = document.createElement('DIV')
-                                contentDiv.innerText = content
-                                contentDiv.classList.add('comment-line')
-                                contentDiv.classList.add('light-dark')
-                                let userP = document.createElement('DIV')
-
-                                userP.classList.add('comment-label-mute')
-                                userP.innerText = user
-                                contentDiv.appendChild(userP)
-                                li.appendChild(contentDiv)
-
-                                normalcommentList.appendChild(li)
-                                normalcommentList.scrollTop = 0
+                                let contentDiv = document.createElement('DIV');
+                                contentDiv.classList.add('comment-line');
+                                contentDiv.classList.add('light-dark');
+                                let userP = document.createElement('DIV');
+                                userP.classList.add('comment-label-mute');
+                                userP.innerText = user;
+                                userP.style.flexGrow = '1';
+                                userP.style.whiteSpace = 'nowrap';
+                
+                                let userImg = document.createElement('img');
+                                userImg.classList.add('comment-user-img');
+                                userImg.src = normal[i].user.avatarUrl;
+                
+                                let contentP = document.createElement('p');
+                                contentP.innerHTML = content;
+                                contentP.style.padding = "0 15px";
+                
+                                contentDiv.appendChild(userImg);
+                                contentDiv.appendChild(contentP);
+                                contentDiv.appendChild(userP);
+                
+                
+                                li.appendChild(contentDiv);
+                                // console.log(normal[i].user.avatarUrl)
+                                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
+                                // contentDiv.style.backgroundSize = 'cover'
+                                normalcommentList.appendChild(li);
                             }
                         }
                     })
