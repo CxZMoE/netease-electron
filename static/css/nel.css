@@ -7,11 +7,12 @@
         margin: 0;
         color: ivory;
         background-color: #1e1e1e;
-        font-family: monospace, 微软雅黑;
         border-radius: 5px;
         border: 0px solid #1e1e1e;
         overflow: hidden;
         margin-bottom: 100px;
+        font-family: monospace, 微软雅黑, \5b8b\4f53;
+        font-weight: lighter;
     }
 
     p {
@@ -46,7 +47,6 @@
         width: 6px;
         background-color: #1e1e1e;
     }
-
     /* Button Styles */
 
     .button {
@@ -92,28 +92,31 @@
         height: 100%;
         overflow: hidden;
         overflow-y: scroll;
+        margin-left: 20px;
     }
-
+    .sidebar::-webkit-scrollbar {
+        display: none;
+    }
     /* Vertical*/
 
     .list-box {
-        flex: 6;
+        /* flex: 6; */
         width: 100%;
         /* self */
-        margin-top: 10px;
+        /* margin-top: 10px;
         overflow: hidden;
-        overflow-y: scroll;
+        overflow-y: scroll; */
 
     }
 
     .list-box::-webkit-scrollbar {
-        display: none
+        display: none;
     }
 
     .list-item {
         /* width: 150px;
         height: 35px; */
-        margin: 6px 6px 6px 15px;
+        margin: 6px;
         line-height: 35px;
         text-align: center;
         text-decoration-color: none;
@@ -184,8 +187,8 @@
     }
 
     .music-title {
-        margin-left: auto;
-        margin-right: 10px;
+        margin-left: 10px;
+        margin-right: auto;
         white-space: nowrap;
         overflow: hidden;
     }
@@ -432,6 +435,12 @@
         border-radius: 5px;
         height: 100%;
     }
+    #lyric::-webkit-scrollbar {
+        width: 0;
+    }
+    #lyric-lines::-webkit-scrollbar {
+        width: 0;
+    }
 
     #lyric-lines {
         overflow: hidden;
@@ -485,6 +494,7 @@
         overflow: auto;
         height: 100%;
         width: 100%;
+        margin-top: 20px;
         padding-bottom: 15px;
     }
 
@@ -514,16 +524,18 @@
     }
 
     .comment-user-img {
-        height: 35px;
-        width: 35px;
+        height: 50px;
+        width: 50px;
         border-radius: 5px;
         float: left;
+        align-self: flex-start;
     }
 
     .comment-label-mute {
         font-size: 12px;
         color: coral;
         text-align: right;
+        align-self: flex-end;
     }
 
     .right {
@@ -603,8 +615,7 @@
 
     .tag {
         color: coral;
-        padding: 10px;
-        padding-left: 15px;
+        padding: 6px
     }
 
     .sheet-detial-box {
@@ -616,15 +627,14 @@
     }
 
     .sheet-detail-content {
-        font-size: 9px;
-        width: 140px;
+        font-size: 10px;
         padding: 5px;
         text-align: left;
     }
 
     .sheet-detial-box-img {
-        width: 150px;
-        height: 150px;
+        width: 200px;
+        height: 200px;
     }
 
     #loginLabel {

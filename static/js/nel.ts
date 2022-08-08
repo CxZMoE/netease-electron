@@ -157,10 +157,16 @@ export class Player {
 
             // 控制播放列表元素的高度
             playlistBtn.addEventListener('click', (e) => {
-                if (_this.playlistBox.style.height == '300px')
+                if (_this.playlistBox.style.height == '300px'){
                     _this.playlistBox.style.height = '0px'
+                    setTimeout(() => {
+                        _this.playlistBox.className = '';
+                    }, 200);
+                }
                 else {
                     let playIndex = Number(PData.pIndex);
+                    _this.playlistBox.style.fontSize = '10px'
+                    _this.playlistBox.className = 'playlist-box';
                     _this.playlistBox.style.height = '300px'
                     _this.playlistBox.scrollTop = (<HTMLElement>playList.children.item(playIndex)).offsetTop - 155
                 }

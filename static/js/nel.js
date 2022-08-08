@@ -163,10 +163,16 @@ var Player = /** @class */ (function () {
             var playList_1 = document.getElementById('playList');
             // 控制播放列表元素的高度
             playlistBtn.addEventListener('click', function (e) {
-                if (_this.playlistBox.style.height == '300px')
+                if (_this.playlistBox.style.height == '300px') {
                     _this.playlistBox.style.height = '0px';
+                    setTimeout(function () {
+                        _this.playlistBox.className = '';
+                    }, 200);
+                }
                 else {
                     var playIndex = Number(PData.pIndex);
+                    _this.playlistBox.style.fontSize = '10px';
+                    _this.playlistBox.className = 'playlist-box';
                     _this.playlistBox.style.height = '300px';
                     _this.playlistBox.scrollTop = playList_1.children.item(playIndex).offsetTop - 155;
                 }

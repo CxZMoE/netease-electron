@@ -18,14 +18,14 @@
 
 <body id="main">
     <!-- 标题栏 -->
-    <div id="titlebar" class="menu inline darker">
-        <img id="login" src="../pics/BILIBILI.png" alt="banner" class="banner" style="border-radius: 100%;">
+    <div id="titlebar" class="menu inline darker" style="-webkit-app-region: drag;">
+        <img id="login" src="../pics/BILIBILI.png" alt="banner" class="banner" style="border-radius: 100%;-webkit-app-region: no-drag;">
         <span id="loginLabel" class="menu-item">
             未登录
         </span>
-        <span id="drag" class="menu-drag-item">
-        </span>
-        <img id="heart" src="../pics/心.png" alt="heart" class="menu-item">
+        <!-- <span id="drag" class="menu-drag-item">
+        </span> -->
+        <img id="heart" src="../pics/心.png" alt="heart" class="menu-item" style="-webkit-app-region: no-drag;">
         <span id="musicTitle" class=" music-title">
 
         </span>
@@ -52,7 +52,7 @@
             </div>
         </div>
         <!-- 内容 -->
-        <div id="content" style="width: 100%;height: 100%;margin-left: 10px;"></div>
+        <div id="content" style="width: 100%;height: 100%;margin: 10px;"></div>
     </div>
 
     <!-- 播放器前端 -->

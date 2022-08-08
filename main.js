@@ -35,6 +35,12 @@ function createWindow(title, width, height) {
         minWidth: 800,
         minHeight: 600,
         opacity: 0.95,
+        titleBarOverlay: {
+            color: '#000000',
+            symbolColor: '#FF0000',
+            height: '50px'
+        },
+        titleBarStyle: 'hidden',
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
