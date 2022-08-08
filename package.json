@@ -1,6 +1,6 @@
 {
   "name": "netease-electron",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A gui implement of NeteaseApi.",
   "main": "main.js",
   "scripts": {
@@ -33,6 +33,12 @@
         }
       ]
     },
+    "files":[
+      "!node_modules",
+      "!dist",
+      "!preview",
+      "!build.bat"
+    ],
     "extraResources": [
       "./node_modules/@electron/remote/**"
     ],
