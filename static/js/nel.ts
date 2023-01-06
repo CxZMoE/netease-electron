@@ -358,11 +358,7 @@ export class Player {
             var netease = _this.netease;
             // 登录
             if (netease.loginStatus == false) {
-                dialog.newLoginDialog('loginDialog', function () {
-                    let username = <HTMLInputElement>document.getElementById('username');
-                    let password = <HTMLInputElement>document.getElementById('password');
-                    netease.login(username.value, password.value);
-                })
+                dialog.newLoginDialog('loginDialog', netease.loginQrCode);
             } else {
                 netease.qd()
             }
@@ -375,11 +371,11 @@ export class Player {
                 netease.loginStatus = false
                 new Notification('通知', { body: '您还未登录，请先登录。' })
                 _this.netease.data = {}
-                dialog.newLoginDialog('loginDialog', function () {
-                    let username = <HTMLInputElement>document.getElementById('username');
-                    let password = <HTMLInputElement>document.getElementById('password');
-                    netease.login(username.value, password.value);
-                });
+                // dialog.newLoginDialog('loginDialog', function () {
+                //     let username = <HTMLInputElement>document.getElementById('username');
+                //     let password = <HTMLInputElement>document.getElementById('password');
+                //     netease.login(username.value, password.value);
+                // });
                 return
             } else {
                 netease.data = JSON.parse(data)
@@ -389,11 +385,11 @@ export class Player {
                             body: '账号或密码错误'
 
                         })
-                        dialog.newLoginDialog('loginDialog', function () {
-                            let username = <HTMLInputElement>document.getElementById('username');
-                            let password = <HTMLInputElement>document.getElementById('password');
-                            netease.login(username.value, password.value);
-                        });
+                        // dialog.newLoginDialog('loginDialog', function () {
+                        //     let username = <HTMLInputElement>document.getElementById('username');
+                        //     let password = <HTMLInputElement>document.getElementById('password');
+                        //     netease.login(username.value, password.value);
+                        // });
                         return
                     })
                     return
@@ -408,11 +404,11 @@ export class Player {
                         netease.loginStatus = false
                         new Notification('通知', { body: '登录过期，请重新登录' })
                         netease.data = {}
-                        dialog.newLoginDialog('loginDialog', function () {
-                            let username = <HTMLInputElement>document.getElementById('username');
-                            let password = <HTMLInputElement>document.getElementById('password');
-                            netease.login(username.value, password.value);
-                        });
+                        // dialog.newLoginDialog('loginDialog', function () {
+                        //     let username = <HTMLInputElement>document.getElementById('username');
+                        //     let password = <HTMLInputElement>document.getElementById('password');
+                        //     netease.login(username.value, password.value);
+                        // });
 
                     } else {
                         // 登录正常

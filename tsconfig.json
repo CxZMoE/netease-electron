@@ -7,7 +7,8 @@
       "outDir": "./static/js",
       "experimentalDecorators": true,
       "noImplicitAny": false,
-      "types": [] 
+      "types": [] ,
+      "allowJs": true
     },
     "include": [
         "./static/js"

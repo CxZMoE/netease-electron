@@ -103,10 +103,10 @@ var Dialog = /** @class */ (function () {
                 newNode.addEventListener('mouseout', function (e) {
                     newNode.setAttribute("m_move", "false");
                 });
-                document.getElementById("loginBtn").addEventListener('click', function (e) {
-                    e.preventDefault();
-                    loginCallback();
-                });
+                // document.getElementById("loginBtn").addEventListener('click', (e) => {
+                //     e.preventDefault()
+                //     loginCallback()
+                // })
                 newNode.addEventListener('mousemove', function (e) {
                     if (newNode.getAttribute("m_move") == "true") {
                         var rect = newNode.getBoundingClientRect();
@@ -126,6 +126,49 @@ var Dialog = /** @class */ (function () {
                 loginDialogCloseBtn.addEventListener("click", function (e) {
                     e.stopPropagation();
                     newNode.remove();
+                });
+                fetch("".concat(netease_1.server, "/login/qr/key?timerstamp=").concat(Date.now())).then(function (res) { return res.json(); }).then(function (data) {
+                    // {"data":{"code":200,"unikey":"ae5522bd-f6be-4a01-be78-021490308218"},"code":200}
+                    data = data.data;
+                    console.log(data);
+                    if (data != undefined && data.code == 200) {
+                        // 获取Key
+                        var key_1 = data.unikey;
+                        console.log("Get unikey for qrcode: ".concat(key_1));
+                        // 生成二维码
+                        fetch("".concat(netease_1.server, "/login/qr/create?key=").concat(key_1, "&qrimg=1&timerstamp=").concat(Date.now())).then(function (res) { return res.json(); }).then(function (data) {
+                            console.log(data);
+                            data = data.data;
+                            if (data != undefined) {
+                                var qrimg = data.qrimg;
+                                // var sc = document.createElement("script");
+                                // sc.type = "text/javascript";
+                                // sc.src = "../js/utils/qrcode.min.js";
+                                console.log("\u4F7F\u7528qrimg: ".concat(qrimg, " \u751F\u6210\u4E8C\u7EF4\u7801"));
+                                // sc.innerText = `new QRCode(document.getElementById("qrcode"), "${qrurl}");`
+                                var sc = document.createElement("img");
+                                sc.src = qrimg;
+                                // document.body.appendChild(sc);
+                                document.getElementById("qrcode").appendChild(sc);
+                                var qrScanInt;
+                                qrScanInt = setInterval(function () {
+                                    console.log(">> check qrcode scan: " + key_1);
+                                    fetch("".concat(netease_1.server, "/login/qr/check?key=").concat(key_1, "&timerstamp=").concat(Date.now())).then(function (res) { return res.json(); }).then(function (data) {
+                                        console.log(data);
+                                        // {code: 803, message: '授权登陆成功', cookie: 'MUSIC_R_T=1494151088229; Max-Age=2147483647; Expir…2091 13:00:18 GMT; Path=/wapi/clientlog; HTTPOnly'}
+                                        if (data.code == 803) {
+                                            console.log(data.message);
+                                            var cookie = data.cookie;
+                                            fetch("".concat(netease_1.server, "/user/account?cookie=").concat(cookie)).then(function (res) { return res.json(); }).then(function (data) {
+                                                console.log(data);
+                                                loginCallback(cookie, data);
+                                            });
+                                        }
+                                    });
+                                }, 1000);
+                            }
+                        });
+                    }
                 });
             });
             return id;

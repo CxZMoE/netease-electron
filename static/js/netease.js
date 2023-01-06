@@ -22,45 +22,73 @@ var Netease = /** @class */ (function () {
         });
     };
     // 登录
-    Netease.prototype.login = function (username, password) {
+    // login(username, password) {
+    //     console.log('login')
+    //     fetch(`${server}/login?email=${username}&password=${password}`).then(res => res.json()).then(data => {
+    //         console.log('end')
+    //         console.log(data)
+    //         // 保存登录信息
+    //         if (data.code != 502) {
+    //             this.data = data;
+    //             console.log(this.data);
+    //             this.cookie = this.data.cookie
+    //             new Notification("通知", {
+    //                 body: "登录成功"
+    //             })
+    //             document.getElementById("loginLabel").innerText = "已登录"
+    //             this.loginStatus = true
+    //             this.writeConfig(JSON.stringify(data));
+    //             let d = new Dialog()
+    //             d.closeDialog("loginDialog")
+    //             remote.getCurrentWindow().reload()
+    //         } else {
+    //             fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
+    //                 new Notification("登录失败", {
+    //                     body: "账号或密码错误"
+    //                 })
+    //                 return
+    //             })
+    //             //alert("密码错误：" + str)
+    //         }
+    //     })
+    // }
+    Netease.prototype.loginQrCode = function (cookie, data) {
+        if (data === void 0) { data = null; }
         var _this = this;
-        console.log('login');
-        fetch("".concat(exports.server, "/login?email=").concat(username, "&password=").concat(password)).then(function (res) { return res.json(); }).then(function (data) {
-            console.log('end');
-            console.log(data);
-            // 保存登录信息
-            if (data.code != 502) {
-                _this.data = data;
-                console.log(_this.data);
-                _this.cookie = _this.data.cookie;
-                new Notification("通知", {
-                    body: "登录成功"
+        console.log(data);
+        // 保存登录信息
+        if (data != null) {
+            nel_1.netease.data = data;
+            // console.log(this.data);
+            nel_1.netease.data.cookie = cookie;
+            nel_1.netease.cookie = nel_1.netease.data.cookie;
+            new Notification("通知", {
+                body: "登录成功"
+            });
+            document.getElementById("loginLabel").innerText = "已登录";
+            _this.loginStatus = true;
+            _this.writeConfig(JSON.stringify(data));
+            var d = new dialog_1.default();
+            d.closeDialog("loginDialog");
+            remote.getCurrentWindow().reload();
+        }
+        else {
+            fs.unlink("".concat(nel_1.USR_CONFIG_DIR, "/login.json"), function (err) {
+                new Notification("登录失败", {
+                    body: "账号或密码错误"
                 });
-                document.getElementById("loginLabel").innerText = "已登录";
-                _this.loginStatus = true;
-                _this.writeConfig(JSON.stringify(data));
-                var d = new dialog_1.default();
-                d.closeDialog("loginDialog");
-                remote.getCurrentWindow().reload();
-            }
-            else {
-                fs.unlink("".concat(nel_1.USR_CONFIG_DIR, "/login.json"), function (err) {
-                    new Notification("登录失败", {
-                        body: "账号或密码错误"
-                    });
-                    return;
-                });
-                //alert("密码错误：" + str)
-            }
-        });
+                return;
+            });
+            //alert("密码错误：" + str)
+        }
     };
     // 签到
     Netease.prototype.qd = function () {
-        var _this = this;
+        var _this_1 = this;
         fetch("".concat(exports.server, "/daily_signin?type=0&cookie=").concat(this.cookie)).then(function (res) { return res.json(); }).then(function (data) {
             if (data.code == 200) {
                 new Notification("通知", { body: "安卓签到成功，积分+3" });
-                fetch("".concat(exports.server, "/daily_signin?type=0&cookie=").concat(_this.cookie)).then(function (res) { return res.json(); }).then(function (data) {
+                fetch("".concat(exports.server, "/daily_signin?type=0&cookie=").concat(_this_1.cookie)).then(function (res) { return res.json(); }).then(function (data) {
                     if (data.code == 200) {
                         new Notification("通知", { body: "PC/Web签到成功，积分+2" });
                     }

@@ -2,7 +2,7 @@ import * as remote from '@electron/remote';
 const fs = remote.require('fs');
 const http = remote.require('http');
 import Dialog from './dialog'
-import { USR_CONFIG_DIR } from './nel'
+import { netease, USR_CONFIG_DIR } from './nel'
 
 export const server = "http://127.0.0.1:3000"
 class Netease {
@@ -28,36 +28,66 @@ class Netease {
     }
 
     // 登录
-    login(username, password) {
-        console.log('login')
-        fetch(`${server}/login?email=${username}&password=${password}`).then(res => res.json()).then(data => {
-            console.log('end')
-            console.log(data)
-            // 保存登录信息
-            if (data.code != 502) {
-                this.data = data;
-                console.log(this.data);
-                this.cookie = this.data.cookie
-                new Notification("通知", {
-                    body: "登录成功"
-                })
-                document.getElementById("loginLabel").innerText = "已登录"
-                this.loginStatus = true
-                this.writeConfig(JSON.stringify(data));
-                let d = new Dialog()
-                d.closeDialog("loginDialog")
-                remote.getCurrentWindow().reload()
+    // login(username, password) {
+    //     console.log('login')
+    //     fetch(`${server}/login?email=${username}&password=${password}`).then(res => res.json()).then(data => {
+    //         console.log('end')
+    //         console.log(data)
+    //         // 保存登录信息
+    //         if (data.code != 502) {
+    //             this.data = data;
+    //             console.log(this.data);
+    //             this.cookie = this.data.cookie
+    //             new Notification("通知", {
+    //                 body: "登录成功"
+    //             })
+    //             document.getElementById("loginLabel").innerText = "已登录"
+    //             this.loginStatus = true
+    //             this.writeConfig(JSON.stringify(data));
+    //             let d = new Dialog()
+    //             d.closeDialog("loginDialog")
+    //             remote.getCurrentWindow().reload()
 
-            } else {
-                fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
-                    new Notification("登录失败", {
-                        body: "账号或密码错误"
-                    })
-                    return
+    //         } else {
+    //             fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
+    //                 new Notification("登录失败", {
+    //                     body: "账号或密码错误"
+    //                 })
+    //                 return
+    //             })
+    //             //alert("密码错误：" + str)
+    //         }
+    //     })
+    // }
+
+    loginQrCode(cookie, data=null) {
+        var _this = this;
+        console.log(data);
+        // 保存登录信息
+        if (data != null) {
+            netease.data = data;
+            // console.log(this.data);
+            netease.data.cookie = cookie;
+            netease.cookie = netease.data.cookie;
+            new Notification("通知", {
+                body: "登录成功"
+            });
+            document.getElementById("loginLabel").innerText = "已登录";
+            _this.loginStatus = true;
+            _this.writeConfig(JSON.stringify(data));
+            let d = new Dialog();
+            d.closeDialog("loginDialog");
+            remote.getCurrentWindow().reload();
+
+        } else {
+            fs.unlink(`${USR_CONFIG_DIR}/login.json`, (err) => {
+                new Notification("登录失败", {
+                    body: "账号或密码错误"
                 })
-                //alert("密码错误：" + str)
-            }
-        })
+                return;
+            })
+            //alert("密码错误：" + str)
+        }
     }
 
     // 签到

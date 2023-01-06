@@ -11,8 +11,8 @@ require('@electron/remote/main').initialize()
 // }catch(_){}
 
 // 启动api
-
-var neteaseApi = process.exec(`set PORT=3000 && node ${__dirname}/../NeteaseCloudMusicApi/app.js`,(err,stdout)=>{
+console.log("API PATH:", `${__dirname}/NeteaseCloudMusicApi/app.js`);
+var neteaseApi = process.exec(`set PORT=3000 && node ${__dirname}/NeteaseCloudMusicApi/app.js`,(err,stdout)=>{
     console.log(stdout)
     if (err){
         console.log(err)
@@ -91,5 +91,5 @@ app.on('will-quit', function () {
     globalShortcut.unregisterAll()
 
     // 退出网易云API
-    neteaseApi.kill("SIGKILL")
+    neteaseApi.kill('SIGKILL')
 })

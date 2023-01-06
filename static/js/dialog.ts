@@ -121,10 +121,10 @@ class Dialog {
                 newNode.setAttribute("m_move", "false")
             })
 
-            document.getElementById("loginBtn").addEventListener('click', (e) => {
-                e.preventDefault()
-                loginCallback()
-            })
+            // document.getElementById("loginBtn").addEventListener('click', (e) => {
+            //     e.preventDefault()
+            //     loginCallback()
+            // })
             newNode.addEventListener('mousemove', (e) => {
                 if (newNode.getAttribute("m_move") == "true") {
                     let rect = newNode.getBoundingClientRect()
@@ -150,10 +150,59 @@ class Dialog {
                 e.stopPropagation()
                 newNode.remove()
             })
+            fetch(`${server}/login/qr/key?timerstamp=${Date.now()}`).then(res => res.json()).then(data => {
+                // {"data":{"code":200,"unikey":"ae5522bd-f6be-4a01-be78-021490308218"},"code":200}
+                data = data.data
+                console.log(data)
+                if (data != undefined && data.code == 200) {
+                    // 获取Key
+                    const key = data.unikey;
+                    console.log(`Get unikey for qrcode: ${key}`);
+                    // 生成二维码
+                    fetch(`${server}/login/qr/create?key=${key}&qrimg=1&timerstamp=${Date.now()}`).then(res=>res.json()).then(data=>{
+                        console.log(data)
+                        data = data.data;
+                        if (data != undefined){
+                            let qrimg = data.qrimg;
+                            // var sc = document.createElement("script");
+                            // sc.type = "text/javascript";
+                            // sc.src = "../js/utils/qrcode.min.js";
+                            console.log(`使用qrimg: ${qrimg} 生成二维码`)
+                            // sc.innerText = `new QRCode(document.getElementById("qrcode"), "${qrurl}");`
+                            var sc = document.createElement("img");
+                            sc.src = qrimg;
+                            // document.body.appendChild(sc);
+                            document.getElementById("qrcode").appendChild(sc)
+                            
+                            var qrScanInt;
+                            qrScanInt =  setInterval(()=>{
+                                console.log(">> check qrcode scan: " + key)
+                                fetch(`${server}/login/qr/check?key=${key}&timerstamp=${Date.now()}`).then(res=>res.json()).then(data=>{
+                                    console.log(data)
+                                    // {code: 803, message: '授权登陆成功', cookie: 'MUSIC_R_T=1494151088229; Max-Age=2147483647; Expir…2091 13:00:18 GMT; Path=/wapi/clientlog; HTTPOnly'}
+                                    if (data.code == 803) {
+                                        console.log(data.message);
+                                        var cookie = data.cookie;
+
+                                        fetch(`${server}/user/account?cookie=${cookie}`).then((res)=>res.json()).then(data=>{
+                                            console.log(data)
+                                            loginCallback(cookie, data);
+                                        })
+                                    }
+                                });
+
+                                
+                            }, 1000)
+                        }
+                    })
+                }
+            })
+            
         })
         return id
     }
 
+    
     newCollectDialog = function (id, sheetlist, now, cookie) {
         readFile(path.join(__dirname, "../pages/collect.html"), (err, data) => {
             // body
