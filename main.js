@@ -19,14 +19,14 @@ var neteaseApi = process.execFile("node",
         "env": "PORT=3000",
         "maxBuffer": 999999,
     },(err, stdout)=>{
-        // console.log(stdout)
+        console.log(stdout)
         if (err){
             console.log(err)
             return
         }
     }
 )
-console.log(neteaseApi)
+// console.log(neteaseApi)
 // var neteaseApi = process.exec(`set PORT=3000 && node ${__dirname}/NeteaseCloudMusicApi/app.js`,(err,stdout)=>{
 //     console.log(stdout)
 //     if (err){
