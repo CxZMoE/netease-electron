@@ -12,13 +12,28 @@ require('@electron/remote/main').initialize()
 
 // 启动api
 console.log("API PATH:", `${__dirname}/NeteaseCloudMusicApi/app.js`);
-var neteaseApi = process.exec(`set PORT=3000 && node ${__dirname}/NeteaseCloudMusicApi/app.js`,(err,stdout)=>{
-    console.log(stdout)
-    if (err){
-        console.log(err)
-        return
+var neteaseApi = process.execFile("node",
+    [`${__dirname}/NeteaseCloudMusicApi/app.js`]
+    ,
+    {
+        "env": "PORT=3000",
+        "maxBuffer": 999999,
+    },(err, stdout)=>{
+        // console.log(stdout)
+        if (err){
+            console.log(err)
+            return
+        }
     }
-})
+)
+console.log(neteaseApi)
+// var neteaseApi = process.exec(`set PORT=3000 && node ${__dirname}/NeteaseCloudMusicApi/app.js`,(err,stdout)=>{
+//     console.log(stdout)
+//     if (err){
+//         console.log(err)
+//         return
+//     }
+// })
 
 let win = null
 function createWindow(title, width, height) {
@@ -47,7 +62,6 @@ function createWindow(title, width, height) {
             enableRemoteModule: true,
             worldSafeExecuteJavaScript: false,
             devTools: true
-            
         },
         icon: __dirname + "/static/pics/BILIBILI.png"
 
