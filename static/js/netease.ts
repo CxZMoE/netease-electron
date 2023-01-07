@@ -73,8 +73,8 @@ class Netease {
                 body: "登录成功"
             });
             document.getElementById("loginLabel").innerText = "已登录";
-            _this.loginStatus = true;
-            _this.writeConfig(JSON.stringify(data));
+            netease.loginStatus = true
+            netease.writeConfig(JSON.stringify(data));
             let d = new Dialog();
             d.closeDialog("loginDialog");
             remote.getCurrentWindow().reload();
