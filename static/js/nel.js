@@ -608,7 +608,7 @@ var Player = /** @class */ (function () {
             clearInterval(_this_1.lyricInterval);
             if (PData.currentPage == DPlayment_1.PlayerPage.Music) {
                 _this.showLyric();
-                _this.loadComment(1, 25);
+                _this.loadComment(20);
             }
         });
         // 错误处理
@@ -1479,7 +1479,7 @@ var Player = /** @class */ (function () {
                     // 更新封面
                     PData.cover = _this.mPlayList[0].cover;
                     // 加载评论
-                    _this.loadComment(1, 25);
+                    _this.loadComment(20);
                     /// 加载喜不喜欢按钮
                     _this.loadLikeBtn();
                     //loadDislikeBtn()
@@ -1492,24 +1492,28 @@ var Player = /** @class */ (function () {
         });
     };
     // 加载评论
-    Player.prototype.loadComment = function (page, limit) {
+    Player.prototype.loadComment = function (limit) {
         //////console\.log\('show')
-        if (page < 1) {
-            page = 1;
-        }
         var musicPanelBottom = document.getElementById('musicPanelBottom');
-        fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
-            var normal = data.hotComments;
-            if (data.hotComments == undefined || data.hotComments.length == 0) {
-                normal = data.comments;
+        var normalcommentList = document.getElementById('normalcommentList');
+        var page = 1;
+        fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * limit, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
+            console.log(data);
+            var total = data.total || 0;
+            if (data.total <= normalcommentList.childNodes.length) {
+                console.log(normalcommentList.childNodes.length);
+                return;
             }
+            document.getElementById("commentNum").innerText = "\u8BC4\u8BBA\u6570: ".concat(total);
+            var hots = data.hotComments;
+            var normal = data.hotComments;
+            normal = data.comments;
             // musicPanelBottom.innerHTML = ''
             // let hotcommentList = document.createElement('UL')
             // hotcommentList.setAttribute('id', 'hotcommentList')
-            var normalcommentList = document.getElementById('normalcommentList');
             normalcommentList.setAttribute('count', data.total);
-            normalcommentList.setAttribute('page', '1');
-            normalcommentList.setAttribute('pages', String(Math.round(data.total / 3)));
+            normalcommentList.setAttribute('page', String(page));
+            normalcommentList.setAttribute('pages', String(Math.round(data.total / limit) + 1));
             normalcommentList.innerHTML = '';
             // for (let i = 0; i < hot.length; i++) {
             //     let user = hot[i].user.nickname
@@ -1527,6 +1531,56 @@ var Player = /** @class */ (function () {
             //     li.appendChild(contentDiv)
             //     hotcommentList.appendChild(li)
             // }
+            // 热门
+            for (var i = 0; i < hots.length; i++) {
+                var user = hots[i].user.nickname;
+                var content = hots[i].content;
+                var li = document.createElement('LI');
+                //li.classList.add('comment-line')
+                var contentDiv = document.createElement('DIV');
+                contentDiv.classList.add('comment-line');
+                contentDiv.classList.add('light-dark');
+                contentDiv.style.backgroundColor = "#30303066";
+                var detialDiv = document.createElement('DIV');
+                detialDiv.style.display = "flex";
+                detialDiv.style.flexGrow = "1";
+                detialDiv.style.flexDirection = "column";
+                detialDiv.style.alignItems = "flex-end";
+                detialDiv.style.justifyContent = "space-between";
+                detialDiv.style.alignSelf = "stretch";
+                // detialDiv.classList.add('comment-label-mute');
+                var countP = document.createElement('DIV');
+                countP.classList.add('comment-label-mute-up');
+                countP.innerText = "TOP ".concat(i + 1);
+                countP.style.whiteSpace = 'nowrap';
+                var userP = document.createElement('DIV');
+                userP.classList.add('comment-label-mute');
+                userP.innerText = "".concat(user);
+                userP.style.whiteSpace = 'nowrap';
+                var userImg = document.createElement('img');
+                userImg.classList.add('comment-user-img');
+                userImg.src = hots[i].user.avatarUrl;
+                contentDiv.appendChild(userImg);
+                var contentP = document.createElement('span');
+                // 对评论内容换行进行解析并生成元素
+                var content_split = content.split('\n');
+                for (var j = 0; j < content_split.length; j++) {
+                    var lineP = document.createElement('div');
+                    lineP.innerHTML = ParseEmoji(content_split[j]);
+                    lineP.style.padding = "0 15px";
+                    contentP.appendChild(lineP);
+                }
+                contentDiv.appendChild(contentP);
+                detialDiv.appendChild(countP);
+                detialDiv.appendChild(userP);
+                contentDiv.appendChild(detialDiv);
+                li.appendChild(contentDiv);
+                // console.log(normal[i].user.avatarUrl)
+                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
+                // contentDiv.style.backgroundSize = 'cover'
+                normalcommentList.appendChild(li);
+            }
+            // 普通
             for (var i = 0; i < normal.length; i++) {
                 var user = normal[i].user.nickname;
                 var content = normal[i].content;
@@ -1535,10 +1589,21 @@ var Player = /** @class */ (function () {
                 var contentDiv = document.createElement('DIV');
                 contentDiv.classList.add('comment-line');
                 contentDiv.classList.add('light-dark');
+                var detialDiv = document.createElement('DIV');
+                detialDiv.style.display = "flex";
+                detialDiv.style.flexGrow = "1";
+                detialDiv.style.flexDirection = "column";
+                detialDiv.style.alignItems = "flex-end";
+                detialDiv.style.justifyContent = "space-between";
+                detialDiv.style.alignSelf = "stretch";
+                // detialDiv.classList.add('comment-label-mute');
+                var countP = document.createElement('DIV');
+                countP.classList.add('comment-label-mute-up');
+                countP.innerText = "# ".concat(normalcommentList.children.length - hots.length + 1);
+                countP.style.whiteSpace = 'nowrap';
                 var userP = document.createElement('DIV');
                 userP.classList.add('comment-label-mute');
-                userP.innerText = user;
-                userP.style.flexGrow = '1';
+                userP.innerText = "".concat(user);
                 userP.style.whiteSpace = 'nowrap';
                 var userImg = document.createElement('img');
                 userImg.classList.add('comment-user-img');
@@ -1554,7 +1619,9 @@ var Player = /** @class */ (function () {
                     contentP.appendChild(lineP);
                 }
                 contentDiv.appendChild(contentP);
-                contentDiv.appendChild(userP);
+                detialDiv.appendChild(countP);
+                detialDiv.appendChild(userP);
+                contentDiv.appendChild(detialDiv);
                 li.appendChild(contentDiv);
                 // console.log(normal[i].user.avatarUrl)
                 // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
@@ -1579,56 +1646,28 @@ var Player = /** @class */ (function () {
             //     document.getElementById('commentPageDown').style.display = 'block'
             //     normalcommentList.setAttribute('page', '1')
             // })
-            var commentPageUpFunc = function (e) {
-                e.stopPropagation();
-                var page = Number(normalcommentList.getAttribute('page'));
-                if (page > 1) {
-                    page = Number(page) - 1;
-                    normalcommentList.setAttribute('page', String(page));
-                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
-                        var normal = data.comments;
-                        //////console\.log\(str)
-                        if (normal != undefined) {
-                            normalcommentList.innerHTML = '';
-                            for (var i = 0; i < normal.length; i++) {
-                                var user = normal[i].user.nickname;
-                                var content = normal[i].content;
-                                var li = document.createElement('LI');
-                                //li.classList.add('comment-line')
-                                var contentDiv = document.createElement('DIV');
-                                contentDiv.innerHTML = content;
-                                contentDiv.classList.add('comment-line');
-                                contentDiv.classList.add('light-dark');
-                                var userP = document.createElement('DIV');
-                                userP.classList.add('comment-label-mute');
-                                userP.innerHTML = user;
-                                contentDiv.appendChild(userP);
-                                li.appendChild(contentDiv);
-                                normalcommentList.appendChild(li);
-                                normalcommentList.scrollTop = 0;
-                            }
-                        }
-                    });
-                }
-            };
             var commentPageDownFunc = function () {
                 // e.stopPropagation()
                 var page = Number(normalcommentList.getAttribute('page'));
-                //////console\.log\('still')
-                //////console\.log\('still+'+page)
-                //////console\.log\('stillpages:'+normalcommentList.getAttribute('pages'))
-                //////console\.log\('??'+(page < normalcommentList.getAttribute('pages')))
+                console.log("page: ".concat(page, " pages: ").concat(Number(normalcommentList.getAttribute('pages'))));
                 if (page < Number(normalcommentList.getAttribute('pages'))) {
                     page = Number(page) + 1;
                     normalcommentList.setAttribute('page', String(page));
                     //////console\.log\(normalcommentList.getAttribute('pages'))
                     //////console\.log\(normalcommentList.getAttribute('page'))
                     //////console\.log\(page)
-                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * 3, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
-                        var normal = data.hotComments;
-                        if (data.hotComments == undefined || data.hotComments.length == 0) {
-                            normal = data.comments;
+                    var remain = total - ((page - 1) * limit);
+                    if (remain < limit) {
+                        console.log('remain');
+                        limit = remain;
+                    }
+                    fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * limit, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
+                        console.log(data);
+                        if (data.total <= normalcommentList.childNodes.length) {
+                            console.log('out');
+                            return;
                         }
+                        var normal = data.comments;
                         //////console\.log\(str)
                         if (normal != undefined) {
                             // normalcommentList.innerHTML = ''
@@ -1640,10 +1679,20 @@ var Player = /** @class */ (function () {
                                 var contentDiv = document.createElement('DIV');
                                 contentDiv.classList.add('comment-line');
                                 contentDiv.classList.add('light-dark');
+                                var detialDiv = document.createElement('DIV');
+                                detialDiv.style.display = "flex";
+                                detialDiv.style.flexGrow = "1";
+                                detialDiv.style.flexDirection = "column";
+                                detialDiv.style.alignItems = "flex-end";
+                                detialDiv.style.justifyContent = "space-between";
+                                detialDiv.style.alignSelf = "stretch";
+                                var countP = document.createElement('DIV');
+                                countP.classList.add('comment-label-mute-up');
+                                countP.innerText = "# ".concat(normalcommentList.children.length - hots.length + 1);
+                                countP.style.whiteSpace = 'nowrap';
                                 var userP = document.createElement('DIV');
                                 userP.classList.add('comment-label-mute');
-                                userP.innerText = user;
-                                userP.style.flexGrow = '1';
+                                userP.innerText = "".concat(user);
                                 userP.style.whiteSpace = 'nowrap';
                                 var userImg = document.createElement('img');
                                 userImg.classList.add('comment-user-img');
@@ -1659,7 +1708,9 @@ var Player = /** @class */ (function () {
                                 }
                                 contentDiv.appendChild(userImg);
                                 contentDiv.appendChild(contentP);
-                                contentDiv.appendChild(userP);
+                                detialDiv.appendChild(countP);
+                                detialDiv.appendChild(userP);
+                                contentDiv.appendChild(detialDiv);
                                 li.appendChild(contentDiv);
                                 // console.log(normal[i].user.avatarUrl)
                                 // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
@@ -1679,6 +1730,8 @@ var Player = /** @class */ (function () {
             //musicPanelBottom.appendChild(hotcommentList)
             // musicPanelBottom.appendChild(normalcommentList)
             musicPanelBottom.onscroll = function (ev) {
+                console.log(musicPanelBottom.scrollHeight);
+                console.log(musicPanelBottom.scrollTop + musicPanelBottom.clientHeight);
                 if (musicPanelBottom.scrollHeight - 1 <= musicPanelBottom.scrollTop + musicPanelBottom.clientHeight) {
                     //console\.log\('touch')
                     // _this.currentOffset += 1;
@@ -1770,7 +1823,7 @@ var Player = /** @class */ (function () {
                             body: '评论发送成功'
                         });
                         addcommentBox.remove();
-                        _this.loadComment(1, 25);
+                        _this.loadComment(20);
                     }
                     else {
                         ////console\.log\(str)
@@ -1848,7 +1901,7 @@ var Player = /** @class */ (function () {
                 // 加载下载按钮
                 _this.loadDownloadBtn();
                 // 评论
-                _this.loadComment(1, 25);
+                _this.loadComment(20);
             });
         }
     };

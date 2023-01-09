@@ -651,7 +651,7 @@ export class Player {
             clearInterval(this.lyricInterval)
             if (PData.currentPage == PlayerPage.Music) {
                 _this.showLyric()
-                _this.loadComment(1, 25)
+                _this.loadComment(20)
             }
 
         })
@@ -1652,7 +1652,7 @@ export class Player {
                         // 更新封面
                         PData.cover = _this.mPlayList[0].cover;
                         // 加载评论
-                        _this.loadComment(1, 25);
+                        _this.loadComment(20);
                         /// 加载喜不喜欢按钮
                         _this.loadLikeBtn();
                         //loadDislikeBtn()
@@ -1668,29 +1668,32 @@ export class Player {
         })
     }
     // 加载评论
-    loadComment(page: number, limit: number) {
+    loadComment(limit: number) {
         //////console\.log\('show')
-        if (page < 1) {
-            page = 1
-        }
-
+        
         let musicPanelBottom = document.getElementById('musicPanelBottom')
-
-        fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-            let normal = data.hotComments
-            if (data.hotComments == undefined || data.hotComments.length == 0){
-                normal = data.comments
+        let normalcommentList = document.getElementById('normalcommentList');
+        var page = 1
+        fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * limit}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+            console.log(data)
+            let total = data.total || 0
+            if (data.total <= normalcommentList.childNodes.length){
+                console.log(normalcommentList.childNodes.length)
+                return;
             }
-            
+            document.getElementById("commentNum").innerText = `评论数: ${total}`
+            let hots = data.hotComments;
+            let normal = data.hotComments
+            normal = data.comments
             // musicPanelBottom.innerHTML = ''
 
             // let hotcommentList = document.createElement('UL')
             // hotcommentList.setAttribute('id', 'hotcommentList')
 
-            let normalcommentList = document.getElementById('normalcommentList');
+            
             normalcommentList.setAttribute('count', data.total);
-            normalcommentList.setAttribute('page', '1');
-            normalcommentList.setAttribute('pages', String(Math.round(data.total / 3)));
+            normalcommentList.setAttribute('page', String(page));
+            normalcommentList.setAttribute('pages', String(Math.round(data.total / limit) + 1));
             normalcommentList.innerHTML = '';
             // for (let i = 0; i < hot.length; i++) {
             //     let user = hot[i].user.nickname
@@ -1712,6 +1715,73 @@ export class Player {
             //     hotcommentList.appendChild(li)
             // }
 
+            // 热门
+            for (let i = 0; i < hots.length; i++) {
+                let user = hots[i].user.nickname;
+                let content = hots[i].content;
+                let li = document.createElement('LI');
+
+                //li.classList.add('comment-line')
+                let contentDiv = document.createElement('DIV');
+                contentDiv.classList.add('comment-line');
+                contentDiv.classList.add('light-dark');
+                contentDiv.style.backgroundColor = "#30303066";
+                
+                let detialDiv = document.createElement('DIV');
+                detialDiv.style.display = "flex";
+                detialDiv.style.flexGrow = "1";
+                detialDiv.style.flexDirection = "column";
+                detialDiv.style.alignItems = "flex-end";
+                detialDiv.style.justifyContent = "space-between";
+                detialDiv.style.alignSelf = "stretch";
+                
+                
+                // detialDiv.classList.add('comment-label-mute');
+
+                let countP = document.createElement('DIV');
+                countP.classList.add('comment-label-mute-up');
+                countP.innerText = `TOP ${i+1}`;
+                countP.style.whiteSpace = 'nowrap';
+
+                let userP = document.createElement('DIV');
+                userP.classList.add('comment-label-mute');
+                userP.innerText = `${user}`;
+                userP.style.whiteSpace = 'nowrap';
+
+                let userImg = document.createElement('img');
+                userImg.classList.add('comment-user-img');
+                userImg.src = hots[i].user.avatarUrl;
+
+                contentDiv.appendChild(userImg);
+
+                let contentP = document.createElement('span');
+                
+
+                // 对评论内容换行进行解析并生成元素
+                let content_split = content.split('\n')
+                for (let j=0;j<content_split.length;j++){
+                    let lineP = document.createElement('div');
+                    
+                    lineP.innerHTML = ParseEmoji(content_split[j]);
+
+                    lineP.style.padding = "0 15px";
+                    contentP.appendChild(lineP);
+                }
+                
+                
+                contentDiv.appendChild(contentP);
+                detialDiv.appendChild(countP);
+                detialDiv.appendChild(userP);
+                contentDiv.appendChild(detialDiv);
+
+
+                li.appendChild(contentDiv);
+                // console.log(normal[i].user.avatarUrl)
+                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
+                // contentDiv.style.backgroundSize = 'cover'
+                normalcommentList.appendChild(li);
+            }
+            // 普通
             for (let i = 0; i < normal.length; i++) {
                 let user = normal[i].user.nickname;
                 let content = normal[i].content;
@@ -1721,10 +1791,26 @@ export class Player {
                 let contentDiv = document.createElement('DIV');
                 contentDiv.classList.add('comment-line');
                 contentDiv.classList.add('light-dark');
+                
+                let detialDiv = document.createElement('DIV');
+                detialDiv.style.display = "flex";
+                detialDiv.style.flexGrow = "1";
+                detialDiv.style.flexDirection = "column";
+                detialDiv.style.alignItems = "flex-end";
+                detialDiv.style.justifyContent = "space-between";
+                detialDiv.style.alignSelf = "stretch";
+
+                
+                // detialDiv.classList.add('comment-label-mute');
+
+                let countP = document.createElement('DIV');
+                countP.classList.add('comment-label-mute-up');
+                countP.innerText = `# ${normalcommentList.children.length-hots.length+1}`;
+                countP.style.whiteSpace = 'nowrap';
+
                 let userP = document.createElement('DIV');
                 userP.classList.add('comment-label-mute');
-                userP.innerText = user;
-                userP.style.flexGrow = '1';
+                userP.innerText = `${user}`;
                 userP.style.whiteSpace = 'nowrap';
 
                 let userImg = document.createElement('img');
@@ -1747,9 +1833,11 @@ export class Player {
                     contentP.appendChild(lineP);
                 }
                 
-
+                
                 contentDiv.appendChild(contentP);
-                contentDiv.appendChild(userP);
+                detialDiv.appendChild(countP);
+                detialDiv.appendChild(userP);
+                contentDiv.appendChild(detialDiv);
 
 
                 li.appendChild(contentDiv);
@@ -1781,79 +1869,53 @@ export class Player {
 
             // })
 
-            let commentPageUpFunc = (e) => {
-                e.stopPropagation()
-                let page = Number(normalcommentList.getAttribute('page'))
-                if (page > 1) {
-                    page = Number(page) - 1
-                    normalcommentList.setAttribute('page', String(page))
-                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-                        let normal = data.comments
-                        //////console\.log\(str)
-                        if (normal != undefined) {
-                            normalcommentList.innerHTML = ''
-                            for (let i = 0; i < normal.length; i++) {
-                                let user = normal[i].user.nickname
-                                let content = normal[i].content
-                                let li = document.createElement('LI')
-
-                                //li.classList.add('comment-line')
-                                let contentDiv = document.createElement('DIV')
-                                contentDiv.innerHTML = content
-                                contentDiv.classList.add('comment-line')
-                                contentDiv.classList.add('light-dark')
-                                let userP = document.createElement('DIV')
-
-                                userP.classList.add('comment-label-mute')
-                                userP.innerHTML = user
-                                contentDiv.appendChild(userP)
-                                li.appendChild(contentDiv)
-
-                                normalcommentList.appendChild(li)
-                                normalcommentList.scrollTop = 0
-                            }
-                        }
-                    })
-                }
-            }
-
 
             let commentPageDownFunc = () => {
                 // e.stopPropagation()
                 let page = Number(normalcommentList.getAttribute('page'))
-
-                //////console\.log\('still')
-                //////console\.log\('still+'+page)
-                //////console\.log\('stillpages:'+normalcommentList.getAttribute('pages'))
-                //////console\.log\('??'+(page < normalcommentList.getAttribute('pages')))
                 if (page < Number(normalcommentList.getAttribute('pages'))) {
 
                     page = Number(page) + 1
                     normalcommentList.setAttribute('page', String(page))
-                    //////console\.log\(normalcommentList.getAttribute('pages'))
-                    //////console\.log\(normalcommentList.getAttribute('page'))
-                    //////console\.log\(page)
-                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * 3}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
-                        let normal = data.hotComments
-                        if (data.hotComments == undefined || data.hotComments.length == 0){
-                            normal = data.comments
+                    let remain = total - ((page - 1) * limit);
+                    if (remain < limit){
+                        limit = remain
+                    }
+                    fetch(`${netease.server}/comment/music?id=${PData.now}&limit=${limit}&offset=${(page - 1) * limit}&cookie=${netease.cookie}`).then(res => res.json()).then(data => {
+                        if (data.total <= normalcommentList.childNodes.length){
+                            return;
                         }
-                        //////console\.log\(str)
+                        let normal = data.comments
                         if (normal != undefined) {
                             // normalcommentList.innerHTML = ''
                             for (let i = 0; i < normal.length; i++) {
                                 let user = normal[i].user.nickname;
                                 let content = normal[i].content;
                                 let li = document.createElement('LI');
-                
+                                
+                                
                                 //li.classList.add('comment-line')
                                 let contentDiv = document.createElement('DIV');
                                 contentDiv.classList.add('comment-line');
                                 contentDiv.classList.add('light-dark');
+
+                                let detialDiv = document.createElement('DIV');
+                                detialDiv.style.display = "flex";
+                                detialDiv.style.flexGrow = "1";
+                                detialDiv.style.flexDirection = "column";
+                                detialDiv.style.alignItems = "flex-end";
+                                detialDiv.style.justifyContent = "space-between";
+                                detialDiv.style.alignSelf = "stretch";
+
+                                let countP = document.createElement('DIV');
+                                countP.classList.add('comment-label-mute-up');
+                                countP.innerText = `# ${normalcommentList.children.length-hots.length+1}`;
+                                countP.style.whiteSpace = 'nowrap';
+
+                                
                                 let userP = document.createElement('DIV');
                                 userP.classList.add('comment-label-mute');
-                                userP.innerText = user;
-                                userP.style.flexGrow = '1';
+                                userP.innerText = `${user}`;
                                 userP.style.whiteSpace = 'nowrap';
                 
                                 let userImg = document.createElement('img');
@@ -1872,13 +1934,12 @@ export class Player {
                                 
                                 contentDiv.appendChild(userImg);
                                 contentDiv.appendChild(contentP);
-                                contentDiv.appendChild(userP);
+                                detialDiv.appendChild(countP);
+                                detialDiv.appendChild(userP);
+                                contentDiv.appendChild(detialDiv)
                 
                 
                                 li.appendChild(contentDiv);
-                                // console.log(normal[i].user.avatarUrl)
-                                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
-                                // contentDiv.style.backgroundSize = 'cover'
                                 normalcommentList.appendChild(li);
                             }
                         }
@@ -1993,7 +2054,7 @@ export class Player {
                             body: '评论发送成功'
                         })
                         addcommentBox.remove()
-                        _this.loadComment(1, 25)
+                        _this.loadComment(20)
                     } else {
                         ////console\.log\(str)
                     }
@@ -2073,7 +2134,7 @@ export class Player {
                 // 加载下载按钮
                 _this.loadDownloadBtn()
                 // 评论
-                _this.loadComment(1, 25)
+                _this.loadComment(20)
             })
         }
 
