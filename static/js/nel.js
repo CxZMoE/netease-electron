@@ -1474,10 +1474,16 @@ var Player = /** @class */ (function () {
                 var userImg = document.createElement('img');
                 userImg.classList.add('comment-user-img');
                 userImg.src = normal[i].user.avatarUrl;
-                var contentP = document.createElement('p');
-                contentP.innerHTML = content;
-                contentP.style.padding = "0 15px";
                 contentDiv.appendChild(userImg);
+                var contentP = document.createElement('span');
+                // 对评论内容换行进行解析并生成元素
+                var content_split = content.split('\n');
+                for (var j = 0; j < content_split.length; j++) {
+                    var lineP = document.createElement('div');
+                    lineP.innerHTML = content_split[j];
+                    lineP.style.padding = "0 15px";
+                    contentP.appendChild(lineP);
+                }
                 contentDiv.appendChild(contentP);
                 contentDiv.appendChild(userP);
                 li.appendChild(contentDiv);
@@ -1706,8 +1712,6 @@ var Player = /** @class */ (function () {
         var _this_1 = this;
         var downloadBtn = document.getElementById("downloadBtn");
         if (downloadBtn) {
-            // downloadBtn.href = PData.src
-            // downloadBtn.setAttribute('download', `${PData.name}.${PData.src.split('.').slice(-1)}`)
             downloadBtn.onclick = function (e) {
                 e.stopPropagation();
                 console.log(__dirname);
@@ -1787,10 +1791,8 @@ var Player = /** @class */ (function () {
                     _this.sheetListBox = document.getElementById('sheetListBox');
                     var lyricLines_1 = document.getElementById('lyric-lines');
                     var _loop_7 = function (i) {
-                        //////console\.log\('123')
                         if (lyricCuts[i]) {
                             var lyricLine_1 = document.createElement('LI');
-                            //l.classList.add('menu-item')
                             lyricLine_1.setAttribute('time', lyricCuts[i].time);
                             lyricLine_1.id = "lyric-".concat(lyricCuts[i].time);
                             lyricLine_1.innerText = lyricCuts[i].content;

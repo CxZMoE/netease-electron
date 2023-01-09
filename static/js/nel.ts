@@ -575,8 +575,6 @@ export class Player {
             //PData.cover = _this.mPlayList[PData.pIndex].cover
 
             document.getElementById('musicTitle').innerText = '正在播放：' + _this.mPlayList[PData.pIndex].name //+ ' - ' + mPlayList[PData.pIndex].author
-
-
             // 显示歌词
             clearInterval(this.lyricInterval)
             if (PData.currentPage == PlayerPage.Music) {
@@ -1661,11 +1659,21 @@ export class Player {
                 userImg.classList.add('comment-user-img');
                 userImg.src = normal[i].user.avatarUrl;
 
-                let contentP = document.createElement('p');
-                contentP.innerHTML = content;
-                contentP.style.padding = "0 15px";
-
                 contentDiv.appendChild(userImg);
+
+                let contentP = document.createElement('span');
+                
+
+                // 对评论内容换行进行解析并生成元素
+                let content_split = content.split('\n')
+                for (let j=0;j<content_split.length;j++){
+                    let lineP = document.createElement('div');
+                    lineP.innerHTML = content_split[j];
+                    lineP.style.padding = "0 15px";
+                    contentP.appendChild(lineP);
+                }
+                
+
                 contentDiv.appendChild(contentP);
                 contentDiv.appendChild(userP);
 
@@ -1924,8 +1932,6 @@ export class Player {
     loadDownloadBtn() {
         var downloadBtn = <HTMLLinkElement>document.getElementById("downloadBtn")
         if (downloadBtn) {
-            // downloadBtn.href = PData.src
-            // downloadBtn.setAttribute('download', `${PData.name}.${PData.src.split('.').slice(-1)}`)
             downloadBtn.onclick = (e) => {
                 e.stopPropagation()
                 console.log(__dirname)
@@ -2008,10 +2014,8 @@ export class Player {
                         _this.sheetListBox = <HTMLUListElement>document.getElementById('sheetListBox');
                         let lyricLines = <HTMLUListElement>document.getElementById('lyric-lines')
                         for (let i = 0; i < lyricCuts.length; i++) {
-                            //////console\.log\('123')
                             if (lyricCuts[i]){
                                 let lyricLine = document.createElement('LI')
-                                //l.classList.add('menu-item')
                                 lyricLine.setAttribute('time', lyricCuts[i].time)
                                 lyricLine.id = `lyric-${lyricCuts[i].time}`
                                 lyricLine.innerText = lyricCuts[i].content
