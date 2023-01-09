@@ -12,7 +12,7 @@ require('@electron/remote/main').initialize()
 // }catch(_){}
 
 // 启动api
-var apiPath =  (false)?`${__dirname}/../NeteaseCloudMusicApi/app.js`:`${__dirname}/NeteaseCloudMusicApi/app.js` 
+var apiPath =  (true)?`${__dirname}/../NeteaseCloudMusicApi/app.js`:`${__dirname}/NeteaseCloudMusicApi/app.js` 
 console.log("API PATH:", apiPath);
 var neteaseApi = process.execFile("node",
     [apiPath]

@@ -1649,26 +1649,18 @@ var Player = /** @class */ (function () {
             var commentPageDownFunc = function () {
                 // e.stopPropagation()
                 var page = Number(normalcommentList.getAttribute('page'));
-                console.log("page: ".concat(page, " pages: ").concat(Number(normalcommentList.getAttribute('pages'))));
                 if (page < Number(normalcommentList.getAttribute('pages'))) {
                     page = Number(page) + 1;
                     normalcommentList.setAttribute('page', String(page));
-                    //////console\.log\(normalcommentList.getAttribute('pages'))
-                    //////console\.log\(normalcommentList.getAttribute('page'))
-                    //////console\.log\(page)
                     var remain = total - ((page - 1) * limit);
                     if (remain < limit) {
-                        console.log('remain');
                         limit = remain;
                     }
                     fetch("".concat(exports.netease.server, "/comment/music?id=").concat(PData.now, "&limit=").concat(limit, "&offset=").concat((page - 1) * limit, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
-                        console.log(data);
                         if (data.total <= normalcommentList.childNodes.length) {
-                            console.log('out');
                             return;
                         }
                         var normal = data.comments;
-                        //////console\.log\(str)
                         if (normal != undefined) {
                             // normalcommentList.innerHTML = ''
                             for (var i = 0; i < normal.length; i++) {
@@ -1712,9 +1704,6 @@ var Player = /** @class */ (function () {
                                 detialDiv.appendChild(userP);
                                 contentDiv.appendChild(detialDiv);
                                 li.appendChild(contentDiv);
-                                // console.log(normal[i].user.avatarUrl)
-                                // contentDiv.style.backgroundImage = `url("${normal[i].user.avatarUrl}")`
-                                // contentDiv.style.backgroundSize = 'cover'
                                 normalcommentList.appendChild(li);
                             }
                         }
@@ -1730,8 +1719,6 @@ var Player = /** @class */ (function () {
             //musicPanelBottom.appendChild(hotcommentList)
             // musicPanelBottom.appendChild(normalcommentList)
             musicPanelBottom.onscroll = function (ev) {
-                console.log(musicPanelBottom.scrollHeight);
-                console.log(musicPanelBottom.scrollTop + musicPanelBottom.clientHeight);
                 if (musicPanelBottom.scrollHeight - 1 <= musicPanelBottom.scrollTop + musicPanelBottom.clientHeight) {
                     //console\.log\('touch')
                     // _this.currentOffset += 1;
