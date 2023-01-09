@@ -88,26 +88,28 @@ var SheetDetial = /** @class */ (function () {
             return __generator(this, function (_a) {
                 return [2 /*return*/, fetch("".concat(nel_1.netease.server, "/lyric?id=").concat(musicId)).then(function (res) { return res.json(); }).then(function (data) {
                         var lyric_cuts = []; // 歌词换行切片
-                        // let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
                         if (data.lrc != undefined) {
                             var lyric = data.lrc.lyric;
-                            ////console.log(lyric)
-                            var lines = lyric.split("\n");
-                            for (var i = 0; i < lines.length; i++) {
-                                var line = lines[i];
+                            var lyricLines = lyric.split("\n");
+                            // 对所有歌词的行进行解析，获取其时间(time)和内容(content)
+                            for (var i = 0; i < lyricLines.length; i++) {
+                                var line = lyricLines[i];
                                 var lineSplt = line.split(']');
                                 if (line.length < 2) {
                                     continue;
                                 }
-                                var timeBase = lineSplt[0].slice(1).split('.')[0];
-                                // 毫秒级定位
-                                // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                                var timeMinute = timeBase.split(":")[0];
-                                var timeSecond = timeBase.split(":")[1];
-                                var time = Number(timeMinute) * 60 + Number(timeSecond);
+                                // 计算当前的歌词对应的时间
+                                var lyricTimeCurrent = lineSplt[0].slice(1).split('.')[0];
+                                var minutes = lyricTimeCurrent.split(":")[0];
+                                var seconds = lyricTimeCurrent.split(":")[1];
+                                var time = Number(minutes) * 60 + Number(seconds);
                                 var content = lineSplt[1];
                                 if (content == undefined) {
                                     content = line;
+                                }
+                                if (content.length == 0) {
+                                    // 当前行歌词为空
+                                    continue;
                                 }
                                 // 添加歌词行
                                 lyric_cuts[i] = { "time": time, "content": content };

@@ -54,34 +54,34 @@ export class SheetDetial {
     async GetLyric(musicId: string) {
         return fetch(`${netease.server}/lyric?id=${musicId}`).then(res => res.json()).then(data => {
             let lyric_cuts = <any[]>[];    // 歌词换行切片
-            // let pattn = /\[[0-9]+[\u003a][0-9]+[\u002e][0-9]+\]/g
-
             if (data.lrc != undefined) {
-                let lyric = data.lrc.lyric
-                ////console.log(lyric)
-                let lines = lyric.split("\n")
-                for (let i = 0; i < lines.length; i++) {
-                    let line = lines[i]
-                    let lineSplt = line.split(']')
+                let lyric = data.lrc.lyric;
+                let lyricLines = lyric.split("\n");
+
+                // 对所有歌词的行进行解析，获取其时间(time)和内容(content)
+                for (let i = 0; i < lyricLines.length; i++) {
+                    let line = lyricLines[i];
+                    let lineSplt = line.split(']');
                     if (line.length < 2) {
                         continue
                     }
-                    let timeBase = lineSplt[0].slice(1).split('.')[0]
-                    // 毫秒级定位
-                    // let timeExtra = lineSplt[0].slice(1).split('.')[1]
-                    let timeMinute = timeBase.split(":")[0]
-                    let timeSecond = timeBase.split(":")[1]
-                    let time = Number(timeMinute) * 60 + Number(timeSecond)
-                    let content = lineSplt[1]
+
+                    // 计算当前的歌词对应的时间
+                    let lyricTimeCurrent = lineSplt[0].slice(1).split('.')[0];
+                    let minutes = lyricTimeCurrent.split(":")[0];
+                    let seconds = lyricTimeCurrent.split(":")[1];
+                    let time = Number(minutes) * 60 + Number(seconds);
+                    let content = lineSplt[1];
                     if (content == undefined){
                         content = line;
                     }
+                    if (content.length == 0){
+                        // 当前行歌词为空
+                        continue
+                    }
                     // 添加歌词行
-                    lyric_cuts[i] = { "time": time, "content": content }
+                    lyric_cuts[i] = { "time": time, "content": content };
                 }
-                
-
-
             }
             return lyric_cuts;
         })

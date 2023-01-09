@@ -1995,13 +1995,12 @@ export class Player {
 
     }
 
-    // 显示歌词
+    // 显示当前歌曲的滚动歌词
     showLyric() {
         this.currentSheet.GetLyric(PData.now).then(
             (lyricCuts) => {
                 readFile(path.join(__dirname, '../pages/lyric.html'), (err, data) => {
                     let lyricBox = document.getElementById('lyric')
-                    let lyricLines = document.getElementById("lyric-lines");
                     lyricBox.innerHTML = data.toString()
 
                     // 根据歌词的长度判断歌曲是轻音乐还是正常歌曲
@@ -2010,32 +2009,30 @@ export class Player {
                         let lyricLines = <HTMLUListElement>document.getElementById('lyric-lines')
                         for (let i = 0; i < lyricCuts.length; i++) {
                             //////console\.log\('123')
-                            let l = document.createElement('LI')
-                            //l.classList.add('menu-item')
-                            l.setAttribute('time', lyricCuts[i].time)
-                            l.id = 'lyric-' + lyricCuts[i].time
-                            l.innerText = lyricCuts[i].content
-                            lyricLines.appendChild(l)
-                            l.addEventListener('dblclick', (() => {
-                                _this.player.currentTime = Number(l.getAttribute('time'));
-                            }).bind(this))
+                            if (lyricCuts[i]){
+                                let lyricLine = document.createElement('LI')
+                                //l.classList.add('menu-item')
+                                lyricLine.setAttribute('time', lyricCuts[i].time)
+                                lyricLine.id = `lyric-${lyricCuts[i].time}`
+                                lyricLine.innerText = lyricCuts[i].content
+                                lyricLines.appendChild(lyricLine)
+
+                                // 双击歌词转跳到对应的时间
+                                lyricLine.addEventListener('dblclick', (() => {
+                                    _this.player.currentTime = Number(lyricLine.getAttribute('time'));
+                                }).bind(this))
+                            }
                         }
 
                         this.lyricInterval = setInterval(() => {
-                            //////console\.log\(lyricBox.scrollTop)
                             let ct = parseInt(String(PData.pTime));
                             let currentLine = <HTMLLIElement>document.getElementById('lyric-' + ct)
                             if (currentLine != undefined) {
+                                // 刷新样式
                                 for (let i = 0; i < lyricLines.children.length; i++) {
                                     (<HTMLLIElement>lyricLines.children[i]).style.color = 'ivory';
                                 }
                                 currentLine.style.color = 'coral';
-
-                                // var prevoisLine = <HTMLLIElement>currentLine.previousElementSibling;
-                                // if (prevoisLine) {
-                                //     prevoisLine.style.color = 'ivory';
-                                // }
-                                // console.log(currentLine.offsetTop)
                                 lyricLines.scrollTop = currentLine.offsetTop - (lyricLines.clientHeight / 2);
                             }
                         }, 200);

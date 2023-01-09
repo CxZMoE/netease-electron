@@ -1775,13 +1775,12 @@ var Player = /** @class */ (function () {
             });
         }
     };
-    // 显示歌词
+    // 显示当前歌曲的滚动歌词
     Player.prototype.showLyric = function () {
         var _this_1 = this;
         this.currentSheet.GetLyric(PData.now).then(function (lyricCuts) {
             readFile(path.join(__dirname, '../pages/lyric.html'), function (err, data) {
                 var lyricBox = document.getElementById('lyric');
-                var lyricLines = document.getElementById("lyric-lines");
                 lyricBox.innerHTML = data.toString();
                 // 根据歌词的长度判断歌曲是轻音乐还是正常歌曲
                 if (lyricCuts.length > 0) {
@@ -1789,43 +1788,41 @@ var Player = /** @class */ (function () {
                     var lyricLines_1 = document.getElementById('lyric-lines');
                     var _loop_7 = function (i) {
                         //////console\.log\('123')
-                        var l = document.createElement('LI');
-                        //l.classList.add('menu-item')
-                        l.setAttribute('time', lyricCuts[i].time);
-                        l.id = 'lyric-' + lyricCuts[i].time;
-                        l.innerText = lyricCuts[i].content;
-                        lyricLines_1.appendChild(l);
-                        l.addEventListener('dblclick', (function () {
-                            _this.player.currentTime = Number(l.getAttribute('time'));
-                        }).bind(_this_1));
+                        if (lyricCuts[i]) {
+                            var lyricLine_1 = document.createElement('LI');
+                            //l.classList.add('menu-item')
+                            lyricLine_1.setAttribute('time', lyricCuts[i].time);
+                            lyricLine_1.id = "lyric-".concat(lyricCuts[i].time);
+                            lyricLine_1.innerText = lyricCuts[i].content;
+                            lyricLines_1.appendChild(lyricLine_1);
+                            // 双击歌词转跳到对应的时间
+                            lyricLine_1.addEventListener('dblclick', (function () {
+                                _this.player.currentTime = Number(lyricLine_1.getAttribute('time'));
+                            }).bind(_this_1));
+                        }
                     };
                     for (var i = 0; i < lyricCuts.length; i++) {
                         _loop_7(i);
                     }
                     _this_1.lyricInterval = setInterval(function () {
-                        //////console\.log\(lyricBox.scrollTop)
                         var ct = parseInt(String(PData.pTime));
                         var currentLine = document.getElementById('lyric-' + ct);
                         if (currentLine != undefined) {
+                            // 刷新样式
                             for (var i = 0; i < lyricLines_1.children.length; i++) {
                                 lyricLines_1.children[i].style.color = 'ivory';
                             }
                             currentLine.style.color = 'coral';
-                            // var prevoisLine = <HTMLLIElement>currentLine.previousElementSibling;
-                            // if (prevoisLine) {
-                            //     prevoisLine.style.color = 'ivory';
-                            // }
-                            // console.log(currentLine.offsetTop)
                             lyricLines_1.scrollTop = currentLine.offsetTop - (lyricLines_1.clientHeight / 2);
                         }
                     }, 200);
                 }
                 else {
                     _this.sheetListBox = document.getElementById('sheetListBox');
-                    var lyricLines_2 = document.getElementById('lyric-lines');
+                    var lyricLines = document.getElementById('lyric-lines');
                     var l = document.createElement('LI');
                     l.innerText = '纯音乐，敬请聆听。';
-                    lyricLines_2.appendChild(l);
+                    lyricLines.appendChild(l);
                 }
             });
         });

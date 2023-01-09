@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>网易云音乐 Electron</title>
     <script>
@@ -10,49 +9,38 @@
             player.InitDom();
         }
     </script>
-    <script type="text/javascript" src="../js/utils/qrcode.min.js">
-        
-    </script>
-    <script>
-        console.log(QRCode)
-    </script>
     <link rel="stylesheet" href="../css/nel.css">
     <link rel="stylesheet" href="../css/dialog.css">
 </head>
-
+<!-- 主页 -->
 <body id="main">
-    <!-- 标题栏 -->
+    <!-- 标题栏 --> 
+    <!-- 控制长按元素是否可以拖动窗口 style="-webkit-app-region: no-drag;" -->
     <div id="titlebar" class="menu inline darker" style="-webkit-app-region: drag;">
         <img id="login" src="../pics/BILIBILI.png" alt="banner" class="banner" style="border-radius: 100%;-webkit-app-region: no-drag;">
         <span id="loginLabel" class="menu-item">
             未登录
         </span>
-        <!-- <span id="drag" class="menu-drag-item">
-        </span> -->
         <img id="heart" src="../pics/心.png" alt="heart" class="menu-item" style="-webkit-app-region: no-drag;">
-        <span id="musicTitle" class=" music-title">
-
-        </span>
+        <span id="musicTitle" class=" music-title"></span>
     </div>
     
     <!-- 主页内容 -->
     <div id="mainPage" class="page">
         <!-- 侧边栏 -->
         <div class="sidebar">
+            <!-- 侧边栏导航 -->
             <ul id="sidebar" class="list-box">
                 <li id="favBtn" class="list-item light-dark">我喜欢的音乐</li>
-                <li id="fmBtn" class="list-item light-dark">私人FM</li>
+                <li id="fmBtn" class="list-item light-dark">个性FM</li>
                 <li id="dailyRecommendBtn" class="list-item light-dark">每日推荐</li>
                 <li id="sheetBtn" class="list-item light-dark">我的歌单</li>
             </ul>
-
+            <!-- 当前歌单相关 -->
             <p class="tag">歌单详情</p>
             <div id="sheetDetialBox" class="sheet-detial-box">
-                <img id="sheetDetialBoxImg" src="../pics/BILIBILI.png" alt="" class="sheet-detial-box-img" />
-                <div class="sheet-detail-content">
-
-                </div>
-
+                <img id="sheetDetialBoxImg" src="../pics/BILIBILI.png" alt="歌单封面" class="sheet-detial-box-img" />
+                <div class="sheet-detail-content"></div>
             </div>
         </div>
         <!-- 内容 -->
@@ -61,10 +49,13 @@
 
     <!-- 播放器前端 -->
     <div class="playbar darker inline">
+        <!-- 歌曲封面 -->
         <img id="cover" alt="album cover" class="album" src="../pics/BILIBILI.png" />
+        <!-- 控制按钮 -->
         <img id="playerLast" class="button menu-item" src="../pics/last.png" />
         <img id="playerPlay" class="button menu-item" src="../pics/play.png" />
         <img id="playerNext" class="button menu-item" src="../pics/next.png" />
+        <!-- 进度条 -->
         <span class="progress-container inline">
             <span id="currentTimeLabel" class="progress-time menu-item timelabel">0:0</span>
             <div id="progress-bar" class="progress-bar">
@@ -74,15 +65,18 @@
             </div>
             <span id="lengthLabel" class="progress-time menu-item timelabel">0:0</span>
         </span>
+        <!-- 播放列表 -->
         <img id="playlistBtn" class="button menu-item right" src="../pics/list.png" />
+        <!-- 播放模式 -->
         <img id="playmodeBtn" class="button menu-item right" src="../pics/loop.png" />
+        <!-- 播放元素 -->
         <audio id="player" src="" controls hidden></audio>
     </div>
+    <!-- 当前播放列表容器 -->
     <div id="playlistBox" class="playlist-box">
         <p id="playlistSheetName" class="tag"></p>
         <ul id="playList"></ul>
     </div>
-    
     <!-- 播放器前端结束 -->
 </body>
 

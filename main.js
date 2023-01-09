@@ -4,16 +4,18 @@
  */
 
 const { app, BrowserWindow, Tray,Menu } = require('electron')
-const process = require('child_process')
+const process = require('child_process');
+const path = require('path');
 require('@electron/remote/main').initialize()
 // try{
 //     require('electron-reloader')(module)
 // }catch(_){}
 
 // 启动api
-console.log("API PATH:", `${__dirname}/NeteaseCloudMusicApi/app.js`);
+var apiPath =  (false)?`${__dirname}/../NeteaseCloudMusicApi/app.js`:`${__dirname}/NeteaseCloudMusicApi/app.js` 
+console.log("API PATH:", apiPath);
 var neteaseApi = process.execFile("node",
-    [`${__dirname}/NeteaseCloudMusicApi/app.js`]
+    [apiPath]
     ,
     {
         "env": "PORT=3000",
