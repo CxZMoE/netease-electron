@@ -63,6 +63,42 @@ function CheckConfigDir() {
         });
     }
 }
+// 表情解析替换
+function ParseEmoji(content) {
+    content = content.replaceAll("[大笑]", "&#128515")
+        .replaceAll("[可爱]", "&#128522")
+        .replaceAll("[憨笑]", "&#128516")
+        .replaceAll("[色]", "&#128525")
+        .replaceAll("[亲亲]", "&#128536")
+        .replaceAll("[惊恐]", "&#128552")
+        .replaceAll("[流泪]", "&#128557")
+        .replaceAll("[亲]", "&#128538")
+        .replaceAll("[呆]", "&#128528")
+        .replaceAll("[哀伤]", "&#128542")
+        .replaceAll("[呲牙]", "&#128513")
+        .replaceAll("[吐舌]", "&#128541")
+        .replaceAll("[撇嘴]", "&#128530")
+        .replaceAll("[怒]", "&#128545")
+        .replaceAll("[奸笑]", "&#128527")
+        .replaceAll("[汗]", "&#128531")
+        .replaceAll("[痛苦]", "&#128534")
+        .replaceAll("[惶恐]", "&#128560")
+        .replaceAll("[生病]", "&#128552")
+        .replaceAll("[口罩]", "&#128567")
+        .replaceAll("[大哭]", "&#128514")
+        .replaceAll("[晕]", "&#128565")
+        .replaceAll("[发怒]", "&#128520")
+        .replaceAll("[开心]", "&#128516")
+        .replaceAll("[鬼脸]", "&#128540")
+        .replaceAll("[皱眉]", "&#128532")
+        .replaceAll("[流感]", "&#128546")
+        .replaceAll("[爱心]", "&#128149")
+        .replaceAll("[心碎]", "&#128148")
+        .replaceAll("[钟情]", "&#128152")
+        .replaceAll("[星星]", "&#10024")
+        .replaceAll("[生气]", "&#128162");
+    return content;
+}
 var SONG_PLAYBACK_MODE;
 (function (SONG_PLAYBACK_MODE) {
     SONG_PLAYBACK_MODE[SONG_PLAYBACK_MODE["MODE_LOOP"] = 0] = "MODE_LOOP";
@@ -1480,7 +1516,7 @@ var Player = /** @class */ (function () {
                 var content_split = content.split('\n');
                 for (var j = 0; j < content_split.length; j++) {
                     var lineP = document.createElement('div');
-                    lineP.innerHTML = content_split[j];
+                    lineP.innerHTML = ParseEmoji(content_split[j]);
                     lineP.style.padding = "0 15px";
                     contentP.appendChild(lineP);
                 }
@@ -1579,9 +1615,15 @@ var Player = /** @class */ (function () {
                                 var userImg = document.createElement('img');
                                 userImg.classList.add('comment-user-img');
                                 userImg.src = normal[i].user.avatarUrl;
-                                var contentP = document.createElement('p');
-                                contentP.innerHTML = content;
-                                contentP.style.padding = "0 15px";
+                                var contentP = document.createElement('span');
+                                // 对评论内容换行进行解析并生成元素
+                                var content_split = content.split('\n');
+                                for (var j = 0; j < content_split.length; j++) {
+                                    var lineP = document.createElement('div');
+                                    lineP.innerHTML = ParseEmoji(content_split[j]);
+                                    lineP.style.padding = "0 15px";
+                                    contentP.appendChild(lineP);
+                                }
                                 contentDiv.appendChild(userImg);
                                 contentDiv.appendChild(contentP);
                                 contentDiv.appendChild(userP);
@@ -1620,7 +1662,6 @@ var Player = /** @class */ (function () {
         likeBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             fetch("".concat(exports.netease.server, "/like?id=").concat(PData.now, "&cookie=").concat(exports.netease.cookie)).then(function (res) { return res.json(); }).then(function (data) {
-                ////console\.log\(str)
                 if (data.code == 200) {
                     new Notification('通知', {
                         body: '喜欢歌曲成功'
@@ -1630,7 +1671,6 @@ var Player = /** @class */ (function () {
                     new Notification('通知', {
                         body: '喜欢歌曲失败'
                     });
-                    ////console\.log\(str)
                 }
             });
         });
