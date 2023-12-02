@@ -7,7 +7,8 @@
     "start": "tsc && electron .",
     "prestart": "tsc",
     "test": "electron .",
-    "build": "tsc && electron-builder --windows nsis:ia32"
+    "build": "tsc && electron-builder --windows nsis:ia32",
+    "build_linux": "tsc && electron-builder --linux AppImage"
   },
   "keywords": [
     "netease"
@@ -30,6 +31,13 @@
           "arch": [
             "ia32"
           ]
+        }
+      ]
+    },
+    "linux": {
+      "target":[
+        {
+          "target": "AppImage"
         }
       ]
     },
